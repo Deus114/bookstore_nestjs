@@ -1,0 +1,45 @@
+{
+  "000": "Transaction successful",
+  "100": "Invalid OTP code",
+  "101": "OTP has expired. Please try the transaction again",
+  "200": "Created successfully",
+  "201": "Updated successfully",
+  "202": "Deleted successfully",
+  "203": "Data retrieved successfully",
+  "400": "Invalid data",
+  "401": "Access denied",
+  "403": "Access forbidden",
+  "404": "Data not found",
+  "500": "System error",
+  "user": {
+    "not_found": "User not found",
+    "email_exists": "Email already exists",
+    "invalid_password": "Invalid password",
+    "register_success": "Registration successful",
+    "login_success": "Login successful"
+  },
+  "book": {
+    "not_found": "Book not found",
+    "create_success": "Book created successfully",
+    "update_success": "Book updated successfully",
+    "delete_success": "Book deleted successfully"
+  },
+  "category": {
+    "not_found": "Category not found",
+    "create_success": "Category created successfully",
+    "update_success": "Category updated successfully",
+    "delete_success": "Category deleted successfully",
+    "get_success": "Categories retrieved successfully",
+    "get_simple_success": "Simple categories retrieved successfully",
+    "get_by_slug_success": "Category retrieved by slug successfully",
+    "slug_exists": "Slug already exists",
+    "get_custom_query_success": "Categories retrieved with custom query successfully",
+    "query_builder_ready": "Query builder ready to use"
+  },
+  "order": {
+    "not_found": "Order not found",
+    "create_success": "Order created successfully",
+    "update_success": "Order updated successfully",
+    "delete_success": "Order deleted successfully"
+  }
+}
