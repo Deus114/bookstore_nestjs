@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { OrderDetail } from '@src/common/entities';
 import { Repository, SelectQueryBuilder } from 'typeorm';
+import { EntityId } from '@src/common/utils/types';
 
 @Injectable()
 export class OrderDetailRepositoryService {
@@ -14,11 +15,11 @@ export class OrderDetailRepositoryService {
     return this.repository.createQueryBuilder('orderDetail');
   }
 
-  async findOne(id: string): Promise<OrderDetail> {
+  async findOne(id: EntityId): Promise<OrderDetail> {
     return await this.repository.findOne({ where: { id } });
   }
 
-  async findByOrderId(orderId: string): Promise<OrderDetail[]> {
+  async findByOrderId(orderId: EntityId): Promise<OrderDetail[]> {
     return await this.repository.find({
       where: { order: { id: orderId } },
       relations: ['order', 'book'],

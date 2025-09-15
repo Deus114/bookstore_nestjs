@@ -7,9 +7,9 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBody, ApiConsumes, ApiHeader } from '@nestjs/swagger';
-import { HttpExceptionFilter } from '@src/core/http-exception.filter';
 import { Public, ResponseMessage } from '@src/decorator/customize';
 import { FilesService } from './files.service';
+import { FileUploadResponseDto } from '@src/common/dtos/files';
 
 @Controller('file')
 export class FilesController {
@@ -19,7 +19,6 @@ export class FilesController {
   @Post('/upload')
   @ResponseMessage('Upload Single File')
   @UseInterceptors(FileInterceptor('fileUpload'))
-  @UseFilters(new HttpExceptionFilter())
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -37,9 +36,9 @@ export class FilesController {
     required: true,
     description: 'Custom header',
   })
-  uploadFile(@UploadedFile() file: Express.Multer.File) {
-    return {
-      fileName: file.filename,
-    };
+  async uploadFile(
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<FileUploadResponseDto> {
+    return await this.filesService.uploadFile(file);
   }
 }

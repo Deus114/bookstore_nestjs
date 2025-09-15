@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { ErrorMessageService } from '@src/common/services/error-message.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '@src/common/entities';
 import { EntityId, Relation } from '@src/common/utils/types';
@@ -9,6 +10,7 @@ export class UserRepositoryService {
   constructor(
     @InjectRepository(User)
     private readonly repository: Repository<User>,
+    private errorMessageService: ErrorMessageService,
   ) {}
 
   getQueryBuilder(): SelectQueryBuilder<User> {
@@ -26,13 +28,19 @@ export class UserRepositoryService {
   async findOneOrFail(id: EntityId, relations: Relation[] = []): Promise<User> {
     const result = await this.findOne(id, relations);
     if (!result) {
-      throw new NotFoundException('Không tìm thấy người dùng');
+      throw new NotFoundException(
+        this.errorMessageService.getMessage('USER_NOT_FOUND'),
+      );
     }
     return result;
   }
 
   async findByEmail(email: string): Promise<User> {
     return await this.repository.findOne({ where: { email } });
+  }
+
+  async findByPhone(phone: string): Promise<User> {
+    return await this.repository.findOne({ where: { phone } });
   }
 
   async findByRefreshToken(refreshToken: string): Promise<User> {

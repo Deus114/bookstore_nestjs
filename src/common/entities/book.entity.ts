@@ -1,11 +1,4 @@
-import {
-  Column,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-  OneToMany,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
 import { BaseEntity } from './base.entity';
 import { Category } from './category.entity';
 import { OrderDetail } from './order-detail.entity';
@@ -13,9 +6,6 @@ import { IsArray, IsNumber, IsString } from 'class-validator';
 
 @Entity('books')
 export class Book extends BaseEntity {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
   @Column({ type: 'varchar', nullable: false })
   @IsString()
   thumbnail: string;
@@ -32,15 +22,15 @@ export class Book extends BaseEntity {
   @IsString()
   author: string;
 
-  @Column({ type: 'number', nullable: false })
+  @Column({ type: 'float', nullable: false })
   @IsNumber()
   price: number;
 
-  @Column({ type: 'number', default: 0 })
+  @Column({ type: 'int', default: 0 })
   @IsNumber()
   sold: number;
 
-  @Column({ type: 'number', nullable: false, default: 0 })
+  @Column({ type: 'int', nullable: false, default: 0 })
   @IsNumber()
   quantity: number;
 

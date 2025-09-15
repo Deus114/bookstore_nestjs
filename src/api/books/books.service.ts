@@ -1,10 +1,18 @@
 import { Injectable } from '@nestjs/common';
-import { CreateBookDto, UpdateBookDto } from '@src/common/dto/book';
+import { BookResource, BooksResource } from '@src/common/resources';
+import {
+  CreateBookDto,
+  UpdateBookDto,
+  BookResponseDto,
+} from '@src/common/dtos/book';
+import { CreateResponseDto } from '@src/common/dtos/common';
+import { PaginatedResponseDto } from '@src/common/dtos/common';
 import { Book } from '@src/common/entities';
 import { BookRepositoryService } from '@src/common/repositories/book';
 import { CategoryRepositoryService } from '@src/common/repositories/category';
 import { IUser } from '@src/common/utils/interfaces';
 import aqp from 'api-query-params';
+import { EntityId } from '@src/common/utils/types';
 
 @Injectable()
 export class BooksService {
@@ -13,7 +21,10 @@ export class BooksService {
     private categoryRepositoryService: CategoryRepositoryService,
   ) {}
 
-  async create(createBookDto: CreateBookDto, i_user: IUser) {
+  async create(
+    createBookDto: CreateBookDto,
+    i_user: IUser,
+  ): Promise<CreateResponseDto> {
     // Lấy category trước
     const category = await this.categoryRepositoryService.findOne(
       createBookDto.category,
@@ -22,30 +33,35 @@ export class BooksService {
       throw new Error('Category not found');
     }
 
-    let book = await this.bookRepositoryService.create({
-      thumbnail: createBookDto.thumbnail,
-      slider: createBookDto.slider,
-      mainText: createBookDto.mainText,
-      author: createBookDto.author,
-      price: createBookDto.price,
-      quantity: createBookDto.quantity,
-      category: category,
-      sold: 0,
-      createdBy: i_user.id,
-    } as Book);
+    const book = new Book();
+    book.thumbnail = createBookDto.thumbnail;
+    book.slider = createBookDto.slider;
+    book.mainText = createBookDto.mainText;
+    book.author = createBookDto.author;
+    book.price = createBookDto.price;
+    book.quantity = createBookDto.quantity;
+    book.category = category;
+    book.sold = 0;
+    book.createdBy = i_user.id;
+
+    const result = await this.bookRepositoryService.create(book);
     return {
-      id: book.id,
-      createdAt: book.createdAt,
+      id: result.id,
+      createdAt: result.createdAt,
     };
   }
 
-  async findAll(currentPage: number, limit: number, qs: string) {
+  async findAll(
+    currentPage: number,
+    limit: number,
+    qs: string,
+  ): Promise<PaginatedResponseDto<BookResponseDto>> {
     const { filter, sort, population, projection } = aqp(qs);
     delete filter.current;
     delete filter.pageSize;
 
-    let offset = (+currentPage - 1) * +limit;
-    let defaultLimit = +limit ? +limit : 10;
+    const offset = (+currentPage - 1) * +limit;
+    const defaultLimit = +limit ? +limit : 10;
 
     const queryBuilder = this.bookRepositoryService.getQueryBuilder();
 
@@ -78,15 +94,26 @@ export class BooksService {
         pages: totalPages,
         total: totalItems,
       },
-      result,
+      result: BooksResource(result),
     };
   }
 
-  async findOne(id: string, relations: string[] = []) {
-    return await this.bookRepositoryService.findOne(id, relations as any);
+  async findOne(
+    id: EntityId,
+    relations: string[] = [],
+  ): Promise<BookResponseDto> {
+    const book = await this.bookRepositoryService.findOne(
+      id as EntityId,
+      relations as any,
+    );
+    return BookResource(book);
   }
 
-  async update(id: string, updateBookDto: UpdateBookDto, user: IUser) {
+  async update(
+    id: EntityId,
+    updateBookDto: UpdateBookDto,
+    user: IUser,
+  ): Promise<BookResponseDto> {
     // Lấy category trước nếu có thay đổi
     let category = null;
     if (updateBookDto.category) {
@@ -112,14 +139,19 @@ export class BooksService {
       updateData.category = category;
     }
 
-    return await this.bookRepositoryService.updateById(id, updateData);
+    await this.bookRepositoryService.updateById(id, updateData);
+    const updatedBook = await this.bookRepositoryService.findOne(
+      id as EntityId,
+      ['category'],
+    );
+    return BookResource(updatedBook);
   }
 
-  async remove(id: string) {
-    return await this.bookRepositoryService.delete(id);
+  async remove(id: EntityId): Promise<void> {
+    await this.bookRepositoryService.delete(id as EntityId);
   }
 
-  getBookDashboard = async () => {
+  getBookDashboard = async (): Promise<number> => {
     const count = await this.bookRepositoryService.count();
     return count;
   };

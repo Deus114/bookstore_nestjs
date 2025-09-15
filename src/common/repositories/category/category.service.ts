@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ErrorMessageService } from '@src/common/services/error-message.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Category } from '@src/common/entities';
 import { EntityId, Relation } from '@src/common/utils/types';
@@ -9,6 +10,7 @@ export class CategoryRepositoryService {
   constructor(
     @InjectRepository(Category)
     private readonly repository: Repository<Category>,
+    private errorMessageService: ErrorMessageService,
   ) {}
 
   getQueryBuilder(): SelectQueryBuilder<Category> {
@@ -29,7 +31,9 @@ export class CategoryRepositoryService {
   ): Promise<Category> {
     const result = await this.findOne(id, relations);
     if (!result) {
-      throw new Error('Category not found');
+      throw new Error(
+        this.errorMessageService.getMessage('CATEGORY_NOT_FOUND'),
+      );
     }
     return result;
   }
@@ -45,11 +49,11 @@ export class CategoryRepositoryService {
     return await this.repository.save(category);
   }
 
-  async updateById(id: string, updateData: Partial<Category>): Promise<void> {
+  async updateById(id: EntityId, updateData: Partial<Category>): Promise<void> {
     await this.repository.update(id, updateData);
   }
 
-  async softDelete(id: string, deletedBy?: string): Promise<void> {
+  async softDelete(id: EntityId, deletedBy?: string): Promise<void> {
     if (deletedBy) {
       await this.repository.update(id, { deletedBy });
     }

@@ -1,11 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import { CreateOrderDto } from '@src/common/dto/order';
+import { OrderResource, OrdersResource } from '@src/common/resources';
+import { CreateOrderDto, OrderResponseDto } from '@src/common/dtos/order';
+import { CreateResponseDto } from '@src/common/dtos/common';
+import { PaginatedResponseDto } from '@src/common/dtos/common';
 import { Order, OrderDetail, User } from '@src/common/entities';
 import { OrderRepositoryService } from '@src/common/repositories/order';
 import { OrderDetailRepositoryService } from '@src/common/repositories/order-detail';
 import { OrderPaymentStatus } from '@src/common/utils/enums';
 import { IUser } from '@src/common/utils/interfaces';
 import aqp from 'api-query-params';
+import { EntityId } from '@src/common/utils/types';
 
 @Injectable()
 export class OrdersService {
@@ -14,7 +18,7 @@ export class OrdersService {
     private orderDetailRepositoryService: OrderDetailRepositoryService,
   ) {}
 
-  async create(createOrderDto: CreateOrderDto) {
+  async create(createOrderDto: CreateOrderDto): Promise<CreateResponseDto> {
     // Tạo order trước với quan hệ
     const order = new Order();
     order.user = { id: createOrderDto.userId } as User; // Reference to user
@@ -34,7 +38,6 @@ export class OrdersService {
       orderDetail.book = { id: detail.bookId } as any; // Reference to book
       orderDetail.quantity = detail.quantity;
       orderDetail.price = detail.price;
-      orderDetail.bookName = detail.bookName;
 
       await this.orderDetailRepositoryService.create(orderDetail);
     }
@@ -45,18 +48,24 @@ export class OrdersService {
     };
   }
 
-  async getHistory(user: IUser) {
-    let res = await this.orderRepositoryService.findByUserId(user.id);
-    return res;
+  async getHistory(user: IUser): Promise<OrderResponseDto[]> {
+    const res = await this.orderRepositoryService.findByUserId(
+      user.id as EntityId,
+    );
+    return OrdersResource(res);
   }
 
-  async findAll(currentPage: number, limit: number, qs: string) {
+  async findAll(
+    currentPage: number,
+    limit: number,
+    qs: string,
+  ): Promise<PaginatedResponseDto<OrderResponseDto>> {
     const { filter, sort, population, projection } = aqp(qs);
     delete filter.current;
     delete filter.pageSize;
 
-    let offset = (+currentPage - 1) * +limit;
-    let defaultLimit = +limit ? +limit : 10;
+    const offset = (+currentPage - 1) * +limit;
+    const defaultLimit = +limit ? +limit : 10;
 
     const queryBuilder = this.orderRepositoryService.getQueryBuilder();
 
@@ -89,11 +98,11 @@ export class OrdersService {
         pages: totalPages,
         total: totalItems,
       },
-      result,
+      result: OrdersResource(result),
     };
   }
 
-  getOrderDashboard = async () => {
+  getOrderDashboard = async (): Promise<number> => {
     const count = await this.orderRepositoryService.count();
     return count;
   };

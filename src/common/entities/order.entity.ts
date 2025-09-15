@@ -38,7 +38,7 @@ export class Order extends BaseEntity {
   @IsEnum(OrderPaymentStatus)
   paymentStatus: OrderPaymentStatus;
 
-  @Column({ type: 'number', nullable: false })
+  @Column({ type: 'float', nullable: false })
   @IsNumber()
   totalPrice: number;
 

@@ -8,12 +8,17 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
+import { EntityId } from '@src/common/utils/types';
 import { ResponseMessage, User } from '@src/decorator/customize';
 import {
   ChangePassWorDto,
   CreateUserDto,
   UpdateUserDto,
-} from '@src/common/dto/user';
+  UserBulkCreateResponseDto,
+  UserResponseDto,
+} from '@src/common/dtos/user';
+import { CreateResponseDto } from '@src/common/dtos/common';
+import { PaginatedResponseDto } from '@src/common/dtos/common';
 import { IUser } from '@src/common/utils/interfaces';
 import { UsersService } from './users.service';
 
@@ -23,7 +28,10 @@ export class UsersController {
 
   @ResponseMessage('Tạo mới người dùng thành công')
   @Post()
-  async create(@Body() createUserDto: CreateUserDto, @User() user: IUser) {
+  async create(
+    @Body() createUserDto: CreateUserDto,
+    @User() user: IUser,
+  ): Promise<CreateResponseDto> {
     return await this.usersService.create(createUserDto, user);
   }
 
@@ -32,7 +40,7 @@ export class UsersController {
   async bulkCreate(
     @Body() createUserDto: CreateUserDto[],
     @User() user: IUser,
-  ) {
+  ): Promise<UserBulkCreateResponseDto> {
     return await this.usersService.bulkCreate(createUserDto, user);
   }
 
@@ -42,26 +50,31 @@ export class UsersController {
     @Query('current') currentPage: string,
     @Query('pageSize') limit: string,
     @Query() qs: string,
-  ) {
+  ): Promise<PaginatedResponseDto<UserResponseDto>> {
     return await this.usersService.findAll(+currentPage, +limit, qs);
   }
 
   @ResponseMessage('Cập nhật người dùng thành công')
   @Put()
-  async update(@Body() updateUserDto: UpdateUserDto, @User() user: IUser) {
+  async update(
+    @Body() updateUserDto: UpdateUserDto,
+    @User() user: IUser,
+  ): Promise<UserResponseDto> {
     let updatedUser = await this.usersService.update(updateUserDto, user);
     return updatedUser;
   }
 
   @ResponseMessage('Xóa người dùng thành công')
   @Delete(':id')
-  async remove(@Param('id') id: string, @User() user: IUser) {
-    return await this.usersService.remove(id, user);
+  async remove(@Param('id') id: string, @User() user: IUser): Promise<void> {
+    return await this.usersService.remove(id as EntityId, user);
   }
 
   @ResponseMessage('Cập nhật mật khẩu thành công')
   @Post('/change-password')
-  async changePassword(@Body() changePasswordDto: ChangePassWorDto) {
+  async changePassword(
+    @Body() changePasswordDto: ChangePassWorDto,
+  ): Promise<UserResponseDto> {
     return await this.usersService.changePassword(changePasswordDto);
   }
 }

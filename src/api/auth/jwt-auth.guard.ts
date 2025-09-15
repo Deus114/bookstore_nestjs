@@ -4,12 +4,16 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { ErrorMessageService } from '@src/common/services/error-message.service';
 import { AuthGuard } from '@nestjs/passport';
 import { IS_PUBLIC_KEY } from '../../decorator/customize';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
-  constructor(private reflector: Reflector) {
+  constructor(
+    private reflector: Reflector,
+    private errorMessageService: ErrorMessageService,
+  ) {
     super();
   }
 
@@ -29,9 +33,10 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     if (err || !user) {
       throw (
         err ||
-        new UnauthorizedException(
-          'Token không hợp lệ hoặc không có Token ở Header!',
-        )
+        new UnauthorizedException({
+          message: this.errorMessageService.getMessage('INVALID_TOKEN'),
+          errorCode: 'INVALID_TOKEN',
+        })
       );
     }
     return user;

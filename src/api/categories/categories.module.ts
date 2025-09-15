@@ -1,18 +1,14 @@
 import { Module } from '@nestjs/common';
-import { I18nModule } from 'nestjs-i18n';
 import { CategoryRepositoryModule } from '@src/common/repositories/category';
 import { ContentLanguageRepositoryModule } from '@src/common/repositories/content-language';
 import { CategoriesController } from './categories.controller';
 import { CategoriesService } from './categories.service';
+import { ErrorMessageService } from '@src/common/services/error-message.service';
 
 @Module({
-  imports: [
-    I18nModule,
-    CategoryRepositoryModule,
-    ContentLanguageRepositoryModule,
-  ],
+  imports: [CategoryRepositoryModule, ContentLanguageRepositoryModule],
   controllers: [CategoriesController],
-  providers: [CategoriesService],
+  providers: [CategoriesService, ErrorMessageService],
   exports: [CategoriesService],
 })
 export class CategoriesModule {}

@@ -12,11 +12,11 @@ import { Order } from './order.entity';
 
 @Entity('order_details')
 export class OrderDetail extends BaseEntity {
-  @Column({ type: 'number', nullable: false })
+  @Column({ type: 'int', nullable: false })
   @IsNumber()
   quantity: number;
 
-  @Column({ type: 'number', nullable: false })
+  @Column({ type: 'float', nullable: false })
   @IsNumber()
   price: number;
 

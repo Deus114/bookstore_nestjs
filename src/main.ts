@@ -5,7 +5,9 @@ import { ConfigService } from '@nestjs/config';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { JwtAuthGuard } from './api/auth/jwt-auth.guard';
 import { TransformInterceptor } from './core/transform.interceptor';
-import { HttpExceptionFilter } from './core/http-exception.filter';
+import { GlobalExceptionFilter } from './core/global-exception.filter';
+import { LogService } from './common/logger';
+import { ErrorMessageService } from './common/services/error-message.service';
 import { join } from 'path';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
@@ -14,11 +16,18 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
 
   const reflector = app.get(Reflector);
-  const httpExceptionFilter = app.get(HttpExceptionFilter);
+  const logService = app.get(LogService);
+  const errorMessageService = app.get(ErrorMessageService);
 
-  app.useGlobalGuards(new JwtAuthGuard(reflector));
+  app.useGlobalGuards(new JwtAuthGuard(reflector, errorMessageService));
   app.useGlobalInterceptors(new TransformInterceptor(reflector));
-  app.useGlobalFilters(httpExceptionFilter);
+  app.useGlobalFilters(
+    new GlobalExceptionFilter(
+      app.getHttpAdapter(),
+      logService,
+      errorMessageService,
+    ),
+  );
 
   app.useStaticAssets(join(__dirname, '..', 'public'));
   app.setBaseViewsDir(join(__dirname, '..', 'views'));
@@ -60,7 +69,6 @@ async function bootstrap() {
       'token',
     )
     .addSecurityRequirements('token')
-    // .addTag('cats')
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('swagger', app, documentFactory, {

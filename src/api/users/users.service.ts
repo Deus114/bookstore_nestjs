@@ -1,10 +1,17 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { ErrorMessageService } from '@src/common/services/error-message.service';
+import { UserResource, UsersResource } from '@src/common/resources';
+import { EntityId } from '@src/common/utils/types';
 import {
   ChangePassWorDto,
   CreateUserDto,
   RegisterUserDto,
   UpdateUserDto,
-} from '@src/common/dto/user';
+  UserBulkCreateResponseDto,
+  UserResponseDto,
+} from '@src/common/dtos/user';
+import { CreateResponseDto } from '@src/common/dtos/common';
+import { PaginatedResponseDto } from '@src/common/dtos/common';
 import { User } from '@src/common/entities';
 import { UserRepositoryService } from '@src/common/repositories/user';
 import { UserRole, UserType } from '@src/common/utils/enums';
@@ -14,7 +21,10 @@ import { compareSync, genSaltSync, hashSync } from 'bcryptjs';
 
 @Injectable()
 export class UsersService {
-  constructor(private userRepositoryService: UserRepositoryService) {}
+  constructor(
+    private userRepositoryService: UserRepositoryService,
+    private errorMessageService: ErrorMessageService,
+  ) {}
 
   getHashPassword = (password: string) => {
     var salt = genSaltSync(10);
@@ -22,37 +32,52 @@ export class UsersService {
     return hash;
   };
 
-  async register(registerUserDto: RegisterUserDto) {
-    const isExist = await this.userRepositoryService.findByEmail(
+  async register(registerUserDto: RegisterUserDto): Promise<CreateResponseDto> {
+    const isEmailExist = await this.userRepositoryService.findByEmail(
       registerUserDto.email,
     );
-    if (isExist) {
-      throw new BadRequestException(
-        `Email: $${registerUserDto.email} đã tồn tại`,
-      );
+    if (isEmailExist) {
+      throw new BadRequestException({
+        message: this.errorMessageService.getMessage('EMAIL_ALREADY_EXISTS'),
+        errorCode: 'EMAIL_ALREADY_EXISTS',
+      });
     }
-    let hashPassword = this.getHashPassword(registerUserDto.password);
-    let user = await this.userRepositoryService.create({
-      email: registerUserDto.email,
-      password: hashPassword,
-      fullName: registerUserDto.fullName,
-      phone: registerUserDto.phone,
-      role: UserRole.USER,
-    } as User);
+    const isPhoneExist = await this.userRepositoryService.findByPhone(
+      registerUserDto.phone,
+    );
+    if (isPhoneExist) {
+      throw new BadRequestException({
+        message: this.errorMessageService.getMessage('PHONE_ALREADY_EXISTS'),
+        errorCode: 'PHONE_ALREADY_EXISTS',
+      });
+    }
+    const hashPassword = this.getHashPassword(registerUserDto.password);
+    const user = new User();
+    user.email = registerUserDto.email;
+    user.password = hashPassword;
+    user.fullName = registerUserDto.fullName;
+    user.phone = registerUserDto.phone;
+    user.role = UserRole.USER;
+
+    const result = await this.userRepositoryService.create(user);
+
     return {
-      id: user.id,
-      createdAt: user.createdAt,
+      id: result.id,
+      createdAt: result.createdAt,
     };
   }
 
-  async bulkCreate(createUserDto: CreateUserDto[], i_user: IUser) {
+  async bulkCreate(
+    createUserDto: CreateUserDto[],
+    i_user: IUser,
+  ): Promise<UserBulkCreateResponseDto> {
     let countSuccess = 0;
     let countError = 0;
 
     for (const item of createUserDto) {
       try {
         item.role = UserRole.USER;
-        let res = await this.create(item, i_user);
+        const res = await this.create(item, i_user);
         if (res) countSuccess++;
       } catch (error) {
         countError++;
@@ -61,39 +86,48 @@ export class UsersService {
     return { countSuccess, countError };
   }
 
-  async create(createUserDto: CreateUserDto, i_user: IUser) {
+  async create(
+    createUserDto: CreateUserDto,
+    i_user: IUser,
+  ): Promise<CreateResponseDto> {
     const isExist = await this.userRepositoryService.findByEmail(
       createUserDto.email,
     );
     if (isExist) {
-      throw new BadRequestException(
-        `Email: $${createUserDto.email} đã tồn tại`,
-      );
+      throw new BadRequestException({
+        message: this.errorMessageService.getMessage('EMAIL_ALREADY_EXISTS'),
+        errorCode: 'EMAIL_ALREADY_EXISTS',
+      });
     }
-    let hashPassword = this.getHashPassword(createUserDto.password);
-    let user = await this.userRepositoryService.create({
-      email: createUserDto.email,
-      password: hashPassword,
-      fullName: createUserDto.fullName,
-      role: createUserDto.role,
-      phone: createUserDto.phone,
-      isActive: true,
-      type: UserType.SYSTEM,
-      createdBy: i_user.id,
-    } as User);
+    const hashPassword = this.getHashPassword(createUserDto.password);
+    const user = new User();
+    user.email = createUserDto.email;
+    user.password = hashPassword;
+    user.fullName = createUserDto.fullName;
+    user.role = createUserDto.role;
+    user.phone = createUserDto.phone;
+    user.isActive = true;
+    user.type = UserType.SYSTEM;
+    user.createdBy = i_user.id;
+
+    const result = await this.userRepositoryService.create(user);
     return {
-      id: user.id,
-      createdAt: user.createdAt,
+      id: result.id,
+      createdAt: result.createdAt,
     };
   }
 
-  async findAll(currentPage: number, limit: number, qs: string) {
+  async findAll(
+    currentPage: number,
+    limit: number,
+    qs: string,
+  ): Promise<PaginatedResponseDto<UserResponseDto>> {
     const { filter, sort, population, projection } = aqp(qs);
     delete filter.current;
     delete filter.pageSize;
 
-    let offset = (+currentPage - 1) * +limit;
-    let defaultLimit = +limit ? +limit : 10;
+    const offset = (+currentPage - 1) * +limit;
+    const defaultLimit = +limit ? +limit : 10;
 
     const queryBuilder = this.userRepositoryService.getQueryBuilder();
 
@@ -130,59 +164,95 @@ export class UsersService {
     };
   }
 
-  findOne(id: string) {
-    return this.userRepositoryService.findOne(id);
+  async findOne(id: EntityId): Promise<UserResponseDto> {
+    const user = await this.userRepositoryService.findOne(id);
+    return UserResource(user);
   }
 
-  findOneByUserName(username: string) {
-    return this.userRepositoryService.findByEmail(username);
+  async findOneByUserName(username: string): Promise<UserResponseDto> {
+    const user = await this.userRepositoryService.findByEmail(username);
+    return UserResource(user);
   }
 
   isValidPassword(password: string, hash: string) {
     return compareSync(password, hash);
   }
 
-  async update(updateUserDto: UpdateUserDto, user: IUser) {
-    return await this.userRepositoryService.updateById(updateUserDto.id, {
+  async update(
+    updateUserDto: UpdateUserDto,
+    user: IUser,
+  ): Promise<UserResponseDto> {
+    await this.userRepositoryService.updateById(updateUserDto.id, {
       fullName: updateUserDto.fullName,
       phone: updateUserDto.phone,
       updatedBy: user.id,
     });
+    const updatedUser = await this.userRepositoryService.findOne(
+      updateUserDto.id,
+    );
+    return UserResource(updatedUser);
   }
 
-  async remove(id: string, user: IUser) {
-    return await this.userRepositoryService.softDelete(id, user.id);
+  async remove(id: EntityId, user: IUser): Promise<void> {
+    await this.userRepositoryService.softDelete(id, user.id);
   }
 
-  updateRefreshToken = async (refreshToken: string, id: string) => {
-    return await this.userRepositoryService.updateById(id, { refreshToken });
+  updateRefreshToken = async (
+    refreshToken: string,
+    id: EntityId,
+  ): Promise<UserResponseDto> => {
+    await this.userRepositoryService.updateById(id, { refreshToken });
+    const updatedUser = await this.userRepositoryService.findOne(id);
+    return UserResource(updatedUser);
   };
 
-  findUserByRefreshToken = async (refreshToken: string) => {
-    return await this.userRepositoryService.findByRefreshToken(refreshToken);
+  findUserByRefreshToken = async (
+    refreshToken: string,
+  ): Promise<UserResponseDto> => {
+    const user =
+      await this.userRepositoryService.findByRefreshToken(refreshToken);
+    return UserResource(user);
   };
 
-  changePassword = async (changePasswordDto: ChangePassWorDto) => {
+  changePassword = async (
+    changePasswordDto: ChangePassWorDto,
+  ): Promise<UserResponseDto> => {
     const { email, oldpass, newpass } = changePasswordDto;
-    const user = await this.findOneByUserName(email);
+    const user = await this.userRepositoryService.findByEmail(email);
     if (user) {
-      let isValidPassword = this.isValidPassword(oldpass, user.password);
+      const isValidPassword = this.isValidPassword(oldpass, user.password);
       if (isValidPassword) {
-        let updatePass = this.getHashPassword(newpass);
-        return await this.userRepositoryService.updateById(user.id, {
+        const updatePass = this.getHashPassword(newpass);
+        await this.userRepositoryService.updateById(user.id, {
           password: updatePass,
           updatedBy: user.id,
         });
+        const updatedUser = await this.userRepositoryService.findOne(
+          user.id as EntityId,
+        );
+        return UserResource(updatedUser);
       } else {
-        throw new BadRequestException(`Mật khẩu không đúng!`);
+        throw new BadRequestException({
+          message: this.errorMessageService.getMessage('INVALID_PASSWORD'),
+          errorCode: 'INVALID_PASSWORD',
+        });
       }
-    } else throw new BadRequestException(`Không tìm thấy email tương ứng!`);
+    } else
+      throw new BadRequestException({
+        message: this.errorMessageService.getMessage('USER_NOT_FOUND'),
+        errorCode: 'USER_NOT_FOUND',
+      });
   };
 
-  getUserDashboard = async () => {
+  getUserDashboard = async (): Promise<number> => {
     const count = await this.userRepositoryService.count({
       deletedAt: null,
     });
     return count;
   };
+
+  // Public method để AuthService có thể truy cập
+  get userRepo() {
+    return this.userRepositoryService;
+  }
 }

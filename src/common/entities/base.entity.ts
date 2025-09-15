@@ -8,16 +8,15 @@ import {
 } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 import { genSaltSync, hashSync, compareSync } from 'bcryptjs';
+import { EntityId } from '../utils/types';
 
 export abstract class BaseEntity extends TypeOrmBaseEntity {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn('rowid') id: EntityId;
 
   @Column({ type: 'boolean', nullable: false, default: true })
   isActive: boolean;
 
-  @CreateDateColumn({ type: 'timestamptz' })
-  createdAt: Date;
+  @CreateDateColumn({ type: 'timestamptz' }) createdAt: Date;
 
   @Column({ type: 'uuid', nullable: true })
   createdBy?: string;

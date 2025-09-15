@@ -3,114 +3,83 @@ import {
   CategoryResponseDto,
   CreateCategoryDto,
   UpdateCategoryDto,
-} from '@src/common/dto/category';
+} from '@src/common/dtos/category';
+import { CreateResponseDto } from '@src/common/dtos/common';
 import {
   BadRequestBusinessException,
   NotFoundBusinessException,
 } from '@src/common/exceptions/business.exception';
+import { ErrorMessageService } from '@src/common/services/error-message.service';
 import { CategoryRepositoryService } from '@src/common/repositories/category';
 import { ContentLanguageRepositoryService } from '@src/common/repositories/content-language';
 import { IUser } from '@src/common/utils/interfaces';
-import { EntityId, Relation } from '@src/common/utils/types';
-import { randomUUID } from 'crypto';
+import { EntityId } from '@src/common/utils/types';
+import { plainToClass } from 'class-transformer';
+import { CategoryResource, CategoriesResource } from '@src/common/resources';
 
 @Injectable()
 export class CategoriesService {
   constructor(
     private categoryRepositoryService: CategoryRepositoryService,
     private contentLanguageRepositoryService: ContentLanguageRepositoryService,
+    private errorMessageService: ErrorMessageService,
   ) {}
 
   async findAll(language: string = 'vi'): Promise<CategoryResponseDto[]> {
-    const queryBuilder = this.categoryRepositoryService.getQueryBuilder();
-
-    const result = await queryBuilder
-      .leftJoinAndMapOne(
-        'category.nameLang',
-        'content_language',
-        'nameLang',
-        'nameLang.key = category.nameKey AND nameLang.language = :lang',
-        { lang: language },
-      )
-      .leftJoinAndMapOne(
-        'category.descriptionLang',
-        'content_language',
-        'descLang',
-        'descLang.key = category.descriptionKey AND descLang.language = :lang',
-        { lang: language },
-      )
-      .select([
-        'category.id',
-        'category.nameKey',
-        'category.descriptionKey',
-        'category.slug',
-        'category.icon',
-        'category.sortOrder',
-        'category.isActive',
-        'category.createdAt',
-        'category.updatedAt',
-      ])
-      .addSelect('nameLang.content', 'name')
-      .addSelect('descLang.content', 'description')
-      .where('category.isActive = :isActive', { isActive: true })
-      .orderBy('category.sortOrder', 'ASC')
-      .addOrderBy('category.createdAt', 'DESC')
-      .getRawAndEntities();
-
-    return result.entities.map((entity, index) => ({
-      id: entity.id,
-      name: result.raw[index]?.name || entity.nameKey,
-      description: result.raw[index]?.description || entity.descriptionKey,
-      slug: entity.slug,
-      icon: entity.icon,
-      sortOrder: entity.sortOrder,
-      isActive: entity.isActive,
-      createdAt: entity.createdAt,
-      updatedAt: entity.updatedAt,
-    }));
-  }
-
-  async findAllSimple(language: string = 'vi'): Promise<CategoryResponseDto[]> {
     const categories = await this.categoryRepositoryService.findAll();
 
     // Lấy tất cả keys cần thiết
     const nameKeys = categories.map((cat) => cat.nameKey);
-    const translations =
+    const descriptionKeys = categories
+      .map((cat) => cat.descriptionKey)
+      .filter(Boolean);
+
+    const nameTranslations =
       await this.contentLanguageRepositoryService.findByKeysAndLanguage(
         nameKeys,
+        language,
+      );
+    const descriptionTranslations =
+      await this.contentLanguageRepositoryService.findByKeysAndLanguage(
+        descriptionKeys,
         language,
       );
 
     // Map translations với categories
     return categories.map((category) => {
-      const nameTranslation = translations.find(
+      const nameTranslation = nameTranslations.find(
         (t) => t.key === category.nameKey,
       );
-      return {
-        id: category.id,
-        name: nameTranslation?.content || category.nameKey,
-        description: undefined,
-        slug: category.slug,
-        icon: category.icon,
-        sortOrder: category.sortOrder,
-        isActive: category.isActive,
-        createdAt: category.createdAt,
-        updatedAt: category.updatedAt,
-      };
+      const descriptionTranslation = descriptionTranslations.find(
+        (t) => t.key === category.descriptionKey,
+      );
+
+      return plainToClass(
+        CategoryResponseDto,
+        {
+          id: category.id,
+          title: nameTranslation?.content || category.nameKey,
+          description:
+            descriptionTranslation?.content || category.descriptionKey,
+          slug: category.slug,
+          icon: category.icon,
+          sortOrder: category.sortOrder,
+          isActive: category.isActive,
+          createdAt: category.createdAt,
+          updatedAt: category.updatedAt,
+        },
+        { excludeExtraneousValues: true, enableImplicitConversion: true },
+      );
     });
   }
 
   async findOne(
     id: EntityId,
     language: string = 'vi',
-    relations: Relation[] = [],
   ): Promise<CategoryResponseDto> {
-    const category = await this.categoryRepositoryService.findOne(
-      id,
-      relations,
-    );
+    const category = await this.categoryRepositoryService.findOne(id);
     if (!category) {
-      throw new NotFoundBusinessException('category.not_found');
+      throw new NotFoundBusinessException('CATEGORY_NOT_FOUND');
     }
 
     // Lấy translations
@@ -125,37 +94,42 @@ export class CategoriesService {
         language,
       );
 
-    return {
-      id: category.id,
-      name: nameTranslation?.content || category.nameKey,
-      description: descriptionTranslation?.content || category.descriptionKey,
-      slug: category.slug,
-      icon: category.icon,
-      sortOrder: category.sortOrder,
-      isActive: category.isActive,
-      createdAt: category.createdAt,
-      updatedAt: category.updatedAt,
-    };
+    return plainToClass(
+      CategoryResponseDto,
+      {
+        id: category.id,
+        title: nameTranslation?.content || category.nameKey,
+        description: descriptionTranslation?.content || category.descriptionKey,
+        slug: category.slug,
+        icon: category.icon,
+        sortOrder: category.sortOrder,
+        isActive: category.isActive,
+        createdAt: category.createdAt,
+        updatedAt: category.updatedAt,
+      },
+      { excludeExtraneousValues: true, enableImplicitConversion: true },
+    );
   }
 
   async create(
     createCategoryDto: CreateCategoryDto,
     user: IUser,
-    language: string = 'vi',
-  ): Promise<{ id: string; createdAt: Date }> {
+  ): Promise<CreateResponseDto> {
     // Kiểm tra slug đã tồn tại
-    const existingCategory = await this.categoryRepositoryService
-      .getQueryBuilder()
-      .where('category.slug = :slug', { slug: createCategoryDto.slug })
-      .getOne();
+    if (createCategoryDto.slug) {
+      const existingCategory = await this.categoryRepositoryService
+        .getQueryBuilder()
+        .where('category.slug = :slug', { slug: createCategoryDto.slug })
+        .getOne();
 
-    if (existingCategory) {
-      throw new BadRequestBusinessException('category.slug_exists');
+      if (existingCategory) {
+        throw new BadRequestBusinessException('CATEGORY_SLUG_EXISTS');
+      }
     }
 
     // Tạo keys cho translations
-    const nameKey = `category_${randomUUID()}_name`;
-    const descriptionKey = `category_${randomUUID()}_description`;
+    const nameKey = `category_lang_key_vi_${Date.now()}`;
+    const descriptionKey = `category_lang_key_vi_${Date.now()}_desc`;
 
     // Tạo category
     const category = await this.categoryRepositoryService.create({
@@ -164,7 +138,7 @@ export class CategoriesService {
       slug: createCategoryDto.slug,
       icon: createCategoryDto.icon,
       sortOrder: createCategoryDto.sortOrder || 0,
-      isActive: createCategoryDto.isActive !== false,
+      isActive: true,
       createdBy: user.id,
     } as any);
 
@@ -172,12 +146,12 @@ export class CategoriesService {
     const translations = [
       {
         key: nameKey,
-        content: createCategoryDto.nameVi,
+        content: createCategoryDto.titleVi,
         language: 'vi',
       },
       {
         key: nameKey,
-        content: createCategoryDto.nameEn,
+        content: createCategoryDto.titleEn,
         language: 'en',
       },
     ];
@@ -203,21 +177,24 @@ export class CategoriesService {
       await this.contentLanguageRepositoryService.create(translation as any);
     }
 
-    return {
-      id: category.id,
-      createdAt: category.createdAt,
-    };
+    return plainToClass(
+      CreateResponseDto,
+      {
+        id: category.id,
+        createdAt: category.createdAt,
+      },
+      { excludeExtraneousValues: true, enableImplicitConversion: true },
+    );
   }
 
   async update(
     id: EntityId,
     updateCategoryDto: UpdateCategoryDto,
     user: IUser,
-    language: string = 'vi',
   ): Promise<void> {
     const category = await this.categoryRepositoryService.findOne(id);
     if (!category) {
-      throw new NotFoundBusinessException('category.not_found');
+      throw new NotFoundBusinessException('CATEGORY_NOT_FOUND');
     }
 
     // Kiểm tra slug nếu có thay đổi
@@ -229,7 +206,7 @@ export class CategoriesService {
         .getOne();
 
       if (existingCategory) {
-        throw new BadRequestBusinessException('category.slug_exists');
+        throw new BadRequestBusinessException('CATEGORY_SLUG_EXISTS');
       }
     }
 
@@ -238,24 +215,23 @@ export class CategoriesService {
       slug: updateCategoryDto.slug,
       icon: updateCategoryDto.icon,
       sortOrder: updateCategoryDto.sortOrder,
-      isActive: updateCategoryDto.isActive,
       updatedBy: user.id,
     });
 
     // Cập nhật translations
-    if (updateCategoryDto.nameVi) {
+    if (updateCategoryDto.titleVi) {
       await this.contentLanguageRepositoryService.updateByKeyAndLanguage(
         category.nameKey,
         'vi',
-        updateCategoryDto.nameVi,
+        updateCategoryDto.titleVi,
       );
     }
 
-    if (updateCategoryDto.nameEn) {
+    if (updateCategoryDto.titleEn) {
       await this.contentLanguageRepositoryService.updateByKeyAndLanguage(
         category.nameKey,
         'en',
-        updateCategoryDto.nameEn,
+        updateCategoryDto.titleEn,
       );
     }
 
@@ -276,14 +252,10 @@ export class CategoriesService {
     }
   }
 
-  async remove(
-    id: EntityId,
-    user: IUser,
-    language: string = 'vi',
-  ): Promise<void> {
+  async remove(id: EntityId, user: IUser): Promise<void> {
     const category = await this.categoryRepositoryService.findOne(id);
     if (!category) {
-      throw new NotFoundBusinessException('category.not_found');
+      throw new NotFoundBusinessException('CATEGORY_NOT_FOUND');
     }
 
     await this.categoryRepositoryService.softDelete(id, user.id);
@@ -300,7 +272,7 @@ export class CategoriesService {
       .getOne();
 
     if (!category) {
-      throw new NotFoundBusinessException('category.not_found');
+      throw new NotFoundBusinessException('CATEGORY_NOT_FOUND');
     }
 
     // Lấy translations
@@ -315,80 +287,23 @@ export class CategoriesService {
         language,
       );
 
-    return {
-      id: category.id,
-      name: nameTranslation?.content || category.nameKey,
-      description: descriptionTranslation?.content || category.descriptionKey,
-      slug: category.slug,
-      icon: category.icon,
-      sortOrder: category.sortOrder,
-      isActive: category.isActive,
-      createdAt: category.createdAt,
-      updatedAt: category.updatedAt,
-    };
-  }
-
-  getQueryBuilder() {
-    return this.categoryRepositoryService.getQueryBuilder();
-  }
-
-  async findWithCustomQuery(
-    conditions: any = {},
-    language: string = 'vi',
-    relations: Relation[] = [],
-  ): Promise<CategoryResponseDto[]> {
-    const queryBuilder = this.categoryRepositoryService.getQueryBuilder();
-
-    // Thêm relations nếu có
-    if (relations.length > 0) {
-      relations.forEach((relation) => {
-        queryBuilder.leftJoinAndSelect(`category.${relation}`, relation);
-      });
-    }
-
-    const result = await queryBuilder
-      .leftJoinAndMapOne(
-        'category.nameLang',
-        'content_language',
-        'nameLang',
-        'nameLang.key = category.nameKey AND nameLang.language = :lang',
-        { lang: language },
-      )
-      .leftJoinAndMapOne(
-        'category.descriptionLang',
-        'content_language',
-        'descLang',
-        'descLang.key = category.descriptionKey AND descLang.language = :lang',
-        { lang: language },
-      )
-      .select([
-        'category.id',
-        'category.nameKey',
-        'category.descriptionKey',
-        'category.slug',
-        'category.icon',
-        'category.sortOrder',
-        'category.isActive',
-        'category.createdAt',
-        'category.updatedAt',
-      ])
-      .addSelect('nameLang.content', 'name')
-      .addSelect('descLang.content', 'description')
-      .where(conditions)
-      .orderBy('category.sortOrder', 'ASC')
-      .addOrderBy('category.createdAt', 'DESC')
-      .getRawAndEntities();
-
-    return result.entities.map((entity, index) => ({
-      id: entity.id,
-      name: result.raw[index]?.name || entity.nameKey,
-      description: result.raw[index]?.description || entity.descriptionKey,
-      slug: entity.slug,
-      icon: entity.icon,
-      sortOrder: entity.sortOrder,
-      isActive: entity.isActive,
-      createdAt: entity.createdAt,
-      updatedAt: entity.updatedAt,
-    }));
+    return plainToClass(
+      CategoryResponseDto,
+      {
+        id: category.id,
+        title: nameTranslation?.content || category.nameKey,
+        description: descriptionTranslation?.content || category.descriptionKey,
+        slug: category.slug,
+        icon: category.icon,
+        sortOrder: category.sortOrder,
+        isActive: category.isActive,
+        createdAt: category.createdAt,
+        updatedAt: category.updatedAt,
+      },
+      {
+        excludeExtraneousValues: true,
+        enableImplicitConversion: true,
+      },
+    );
   }
 }

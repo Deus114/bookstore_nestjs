@@ -1,15 +1,16 @@
-import { Entity, Column, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { IsNumber, IsString } from 'class-validator';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { EntityId } from '../utils/types';
 import { BaseEntity } from './base.entity';
 import { Book } from './book.entity';
-import { IsNumber, IsString } from 'class-validator';
 
 @Entity('categories')
 export class Category extends BaseEntity {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
   @Column({ type: 'varchar', length: 255 })
   nameKey: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  name: string;
 
   @Column({ type: 'varchar', length: 500, nullable: true })
   descriptionKey: string;
@@ -22,7 +23,7 @@ export class Category extends BaseEntity {
   @IsString()
   icon: string;
 
-  @Column({ type: 'number', default: 0 })
+  @Column({ type: 'int', default: 0 })
   @IsNumber()
   sortOrder: number;
 

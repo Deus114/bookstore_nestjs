@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ErrorMessageService } from '@src/common/services/error-message.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Book } from '@src/common/entities';
 import { EntityId, Relation } from '@src/common/utils/types';
@@ -9,6 +10,7 @@ export class BookRepositoryService {
   constructor(
     @InjectRepository(Book)
     private readonly repository: Repository<Book>,
+    private errorMessageService: ErrorMessageService,
   ) {}
 
   getQueryBuilder(): SelectQueryBuilder<Book> {
@@ -26,7 +28,7 @@ export class BookRepositoryService {
   async findOneOrFail(id: EntityId, relations: Relation[] = []): Promise<Book> {
     const result = await this.findOne(id, relations);
     if (!result) {
-      throw new Error('Book not found');
+      throw new Error(this.errorMessageService.getMessage('BOOK_NOT_FOUND'));
     }
     return result;
   }
@@ -48,11 +50,11 @@ export class BookRepositoryService {
     return await this.repository.save(book);
   }
 
-  async updateById(id: string, updateData: Partial<Book>): Promise<void> {
+  async updateById(id: EntityId, updateData: Partial<Book>): Promise<void> {
     await this.repository.update(id, updateData);
   }
 
-  async delete(id: string): Promise<void> {
+  async delete(id: EntityId): Promise<void> {
     await this.repository.delete(id);
   }
 
