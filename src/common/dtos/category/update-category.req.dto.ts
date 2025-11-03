@@ -1,12 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
-import { EntityId } from '@src/common/utils/types';
+import { IsOptional, IsString } from 'class-validator';
 
 export class UpdateCategoryDto {
-  @ApiProperty({ description: 'ID category' })
-  @IsNotEmpty({ message: 'ID category không được để trống' })
-  id: EntityId;
-
   @ApiProperty({ description: 'Tên category tiếng Việt' })
   @IsOptional()
   @IsString()

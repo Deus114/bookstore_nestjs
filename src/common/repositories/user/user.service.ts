@@ -1,5 +1,4 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { ErrorMessageService } from '@src/common/services/error-message.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '@src/common/entities';
 import { EntityId, Relation } from '@src/common/utils/types';
@@ -10,7 +9,6 @@ export class UserRepositoryService {
   constructor(
     @InjectRepository(User)
     private readonly repository: Repository<User>,
-    private errorMessageService: ErrorMessageService,
   ) {}
 
   getQueryBuilder(): SelectQueryBuilder<User> {
@@ -28,9 +26,9 @@ export class UserRepositoryService {
   async findOneOrFail(id: EntityId, relations: Relation[] = []): Promise<User> {
     const result = await this.findOne(id, relations);
     if (!result) {
-      throw new NotFoundException(
-        this.errorMessageService.getMessage('USER_NOT_FOUND'),
-      );
+      throw new NotFoundException({
+        errorCode: 'USER_NOT_FOUND',
+      });
     }
     return result;
   }
@@ -61,6 +59,11 @@ export class UserRepositoryService {
   }
 
   async updateById(id: string, updateData: Partial<User>): Promise<void> {
+    if (!id) {
+      throw new NotFoundException({
+        errorCode: 'USER_NOT_FOUND',
+      });
+    }
     await this.repository.update(id, updateData);
   }
 

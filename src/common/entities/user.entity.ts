@@ -1,7 +1,9 @@
-import { Entity, Column, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
-import { BaseEntity } from './base.entity';
-import { Order } from './order.entity';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { UserRole, UserType } from '../utils/enums';
+import { BaseEntity } from './base.entity';
+import { Cart } from './cart.entity';
+import { Order } from './order.entity';
+import { UserAddress } from './user-address.entity';
 
 @Entity('users')
 export class User extends BaseEntity {
@@ -32,4 +34,12 @@ export class User extends BaseEntity {
   // Quan hệ One-to-Many với Order
   @OneToMany(() => Order, (order) => order.user)
   orders: Order[];
+
+  // Quan hệ One-to-Many với Cart
+  @OneToMany(() => Cart, (cart) => cart.user)
+  carts: Cart[];
+
+  // Quan hệ One-to-Many với UserAddress
+  @OneToMany(() => UserAddress, (address) => address.user)
+  addresses: UserAddress[];
 }

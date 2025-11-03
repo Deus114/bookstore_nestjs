@@ -11,9 +11,8 @@ export class ContentLanguageRepositoryService {
   ) {}
 
   async create(contentLanguage: ContentLanguage): Promise<ContentLanguage> {
-    contentLanguage.createdAt = new Date();
-    contentLanguage.updatedAt = new Date();
-
+    contentLanguage.createdAt = contentLanguage.generateDateNow();
+    contentLanguage.updatedAt = contentLanguage.generateDateNow();
     return await this.repository.save(contentLanguage);
   }
 
@@ -42,7 +41,23 @@ export class ContentLanguageRepositoryService {
     language: string,
     content: string,
   ): Promise<void> {
-    await this.repository.update({ key, language }, { content });
+    let contentLanguage = await this.findByKeyAndLanguage(key, language);
+
+    if (!contentLanguage) {
+      contentLanguage = new ContentLanguage();
+      contentLanguage.key = key;
+      contentLanguage.language = language;
+      contentLanguage.content = content;
+      await this.create(contentLanguage);
+    } else {
+      contentLanguage.content = content;
+      await this.update(contentLanguage);
+    }
+  }
+
+  async update(contentLanguage: ContentLanguage): Promise<ContentLanguage> {
+    contentLanguage.updatedAt = contentLanguage.generateDateNow();
+    return await this.repository.save(contentLanguage);
   }
 
   async deleteByKeyAndLanguage(key: string, language: string): Promise<void> {

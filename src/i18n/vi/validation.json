@@ -1,0 +1,19 @@
+{
+  "validation": {
+    "isNotEmpty": "Trường :attribute không được để trống.",
+    "isEmail": "Trường :attribute phải là một địa chỉ email hợp lệ.",
+    "isString": "Trường :attribute phải là một chuỗi.",
+    "isNumber": "Trường :attribute phải là một số hợp lệ.",
+    "minLength": "Trường :attribute phải có độ dài tối thiểu là :minLength ký tự.",
+    "maxLength": "Trường :attribute phải có độ dài tối đa là :maxLength ký tự.",
+    "min": "Trường :attribute phải lớn hơn hoặc bằng :min.",
+    "max": "Trường :attribute phải nhỏ hơn hoặc bằng :max.",
+    "isInt": "Trường :attribute phải là một số nguyên.",
+    "isIn": "Trường :attribute phải là một trong các giá trị: :values",
+    "isEnum": "Trường :attribute không hợp lệ.",
+    "matches": "Trường :attribute không đúng định dạng.",
+    "isUUID": "Trường :attribute phải là một UUID hợp lệ."
+  }
+}
+
+

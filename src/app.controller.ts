@@ -1,7 +1,7 @@
-import { Controller, Get, Post, Request, UseGuards } from '@nestjs/common';
-import { AppService } from './app.service';
+import { Controller } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { AuthService } from '@src/api/auth/auth.service';
+import { AuthService } from '@src/api/common/auth/auth.service';
+import { AppService } from './app.service';
 
 @Controller()
 export class AppController {

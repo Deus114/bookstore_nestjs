@@ -1,46 +1,70 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
 import {
-  IsArray,
-  IsNotEmpty,
-  IsString,
-  IsNumber,
-  ValidateNested,
   IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+  ValidateIf,
+  IsInt,
+  Min,
 } from 'class-validator';
-import { OrderPaymentType } from '../../utils/enums';
-import { OrderDetailDto } from './order-detail.req.dto';
+import { OrderPaymentMethod } from '@src/common/utils/enums';
+import { EntityId } from '@src/common/utils/types';
 
 export class CreateOrderDto {
-  @ApiProperty()
-  @IsNotEmpty({ message: 'User Id không được để trống' })
-  userId: string;
+  @ApiProperty({ description: 'User address ID' })
+  @IsNotEmpty()
+  user_address_id: EntityId;
 
-  @ApiProperty()
-  @IsNotEmpty({ message: 'Tên không được để trống' })
-  name: string;
+  @ApiProperty({
+    description: 'Payment method',
+    enum: OrderPaymentMethod,
+  })
+  @IsNotEmpty()
+  @IsEnum(OrderPaymentMethod)
+  payment_method: OrderPaymentMethod;
 
-  @ApiProperty()
-  @IsNotEmpty({ message: 'Địa chỉ không được để trống' })
-  address: string;
+  @ApiProperty({ description: 'Notes', required: false, maxLength: 500 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  notes?: string;
 
-  @ApiProperty()
-  @IsNotEmpty({ message: 'Số điện thoại không được để trống' })
-  phone: string;
+  @ApiProperty({
+    description: 'Source: cart or buy_now',
+    enum: ['cart', 'buy_now'],
+    default: 'cart',
+  })
+  @IsOptional()
+  @IsEnum(['cart', 'buy_now'])
+  source?: 'cart' | 'buy_now';
 
-  @ApiProperty({ enum: OrderPaymentType })
-  @IsNotEmpty({ message: 'PTTT không được để trống' })
-  @IsEnum(OrderPaymentType, { message: 'Loại thanh toán không hợp lệ' })
-  type: OrderPaymentType;
+  // If source is 'cart'
+  @ApiProperty({
+    description: 'Cart item IDs (comma-separated) - required if source is cart',
+    required: false,
+  })
+  @ValidateIf((o) => o.source === 'cart' || !o.source)
+  @IsNotEmpty()
+  item_ids?: string;
 
-  @ApiProperty()
-  @IsNotEmpty({ message: 'Tổng tiền không được để trống' })
-  totalPrice: number;
+  // If source is 'buy_now'
+  @ApiProperty({
+    description: 'Product ID - required if source is buy_now',
+    required: false,
+  })
+  @ValidateIf((o) => o.source === 'buy_now')
+  @IsNotEmpty()
+  product_id?: EntityId;
 
-  @IsArray()
-  @ValidateNested()
-  @Type(() => OrderDetailDto)
-  @ApiProperty({ type: [OrderDetailDto] })
-  @IsNotEmpty({ message: 'Chi tiết đơn hàng không được để trống' })
-  orderDetails: OrderDetailDto[];
+  @ApiProperty({
+    description: 'Quantity - required if source is buy_now',
+    required: false,
+    minimum: 1,
+  })
+  @ValidateIf((o) => o.source === 'buy_now')
+  @IsInt()
+  @Min(1)
+  quantity?: number;
 }

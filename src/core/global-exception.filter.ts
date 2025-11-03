@@ -7,6 +7,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { BaseExceptionFilter } from '@nestjs/core';
+import { I18nService } from 'nestjs-i18n';
 import { LogService } from '@src/common/logger';
 import { ErrorMessageService } from '@src/common/services/error-message.service';
 import { Request, Response } from 'express';
@@ -18,6 +19,7 @@ export class GlobalExceptionFilter extends BaseExceptionFilter {
     private readonly httpServer: HttpServer,
     private readonly logService: LogService,
     private readonly errorMessageService: ErrorMessageService,
+    private readonly i18nService: I18nService<Record<string, unknown>>,
   ) {
     super(httpServer);
   }
@@ -39,7 +41,10 @@ export class GlobalExceptionFilter extends BaseExceptionFilter {
     req: Request,
     res: Response,
   ) {
-    const language = req.headers['accept-language'] || 'vi';
+    // Get language from request (set by LanguageMiddleware)
+    const language =
+      (req as any).language || req.headers['accept-language'] || 'vi';
+    const lang = language.startsWith('en') ? 'en' : 'vi';
     const status = exception.getStatus();
     const errorResponse = exception.getResponse();
 
@@ -49,16 +54,41 @@ export class GlobalExceptionFilter extends BaseExceptionFilter {
     // Extract error code and message
     if (typeof errorResponse === 'object' && errorResponse !== null) {
       const errorObj = errorResponse as any;
-      errorCode = errorObj.errorCode || errorObj.code;
+      // BusinessException uses messageKey, other exceptions use errorCode/code
+      errorCode = errorObj.messageKey || errorObj.errorCode || errorObj.code;
       errorMessage = errorObj.message || errorObj.error || exception.message;
     } else {
       errorMessage = exception.message;
     }
 
-    // Translate error message
-    const translatedMessage = errorCode
-      ? this.errorMessageService.getMessage(errorCode, language)
-      : this.errorMessageService.getHttpMessage(status, language);
+    // Translate error message using I18nService
+    let translatedMessage: string;
+    if (errorCode) {
+      try {
+        const translated = await this.i18nService.translate(
+          `messages.${errorCode}`,
+          {
+            lang,
+          },
+        );
+        translatedMessage =
+          translated === `messages.${errorCode}`
+            ? ((await this.i18nService.translate('messages.500', {
+                lang,
+              })) as string)
+            : (translated as string);
+      } catch {
+        translatedMessage = await this.errorMessageService.getHttpMessage(
+          status,
+          language,
+        );
+      }
+    } else {
+      translatedMessage = await this.errorMessageService.getHttpMessage(
+        status,
+        language,
+      );
+    }
 
     // Log error
     this.logService.setChannel('general');
@@ -86,7 +116,9 @@ export class GlobalExceptionFilter extends BaseExceptionFilter {
     req: Request,
     res: Response,
   ) {
-    const language = req.headers['accept-language'] || 'vi';
+    // Get language from request (set by LanguageMiddleware)
+    const language =
+      (req as any).language || req.headers['accept-language'] || 'vi';
 
     // Log error
     this.logService.setChannel('general');
@@ -101,7 +133,7 @@ export class GlobalExceptionFilter extends BaseExceptionFilter {
     });
 
     // Translate error message
-    const translatedMessage = this.errorMessageService.getHttpMessage(
+    const translatedMessage = await this.errorMessageService.getHttpMessage(
       HttpStatus.INTERNAL_SERVER_ERROR,
       language,
     );

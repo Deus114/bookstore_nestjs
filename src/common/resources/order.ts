@@ -4,9 +4,7 @@ import { OrderResponseDto } from '../dtos/order';
 
 export function OrdersResource(orders: Order[]): OrderResponseDto[] {
   return orders && orders.length
-    ? orders.map((order) => {
-        return OrderResource(order);
-      })
+    ? orders.map((order) => OrderResource(order))
     : [];
 }
 

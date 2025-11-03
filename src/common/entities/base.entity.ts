@@ -18,19 +18,19 @@ export abstract class BaseEntity extends TypeOrmBaseEntity {
 
   @CreateDateColumn({ type: 'timestamptz' }) createdAt: Date;
 
-  @Column({ type: 'uuid', nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   createdBy?: string;
 
   @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt: Date;
 
-  @Column({ type: 'uuid', nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   updatedBy?: string;
 
   @DeleteDateColumn({ type: 'timestamptz', nullable: true })
   deletedAt?: Date;
 
-  @Column({ type: 'uuid', nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   deletedBy?: string;
 
   generateUUID(): string {

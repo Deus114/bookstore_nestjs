@@ -1,29 +1,34 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { BookResponseDto } from '@src/common/dtos/book';
+import { EntityId } from '@src/common/utils/types';
 
 export class OrderDetailResponseDto {
-  @ApiProperty({ description: 'ID của order detail' })
+  @ApiProperty({ description: 'Order detail ID' })
   @Expose()
-  id: string;
+  id: EntityId;
 
-  @ApiProperty({ description: 'Số lượng' })
+  @ApiProperty({ description: 'Quantity' })
   @Expose()
   quantity: number;
 
-  @ApiProperty({ description: 'Giá tiền' })
+  @ApiProperty({ description: 'Unit price' })
   @Expose()
-  price: number;
+  unitPrice: number;
 
-  @ApiProperty({ description: 'Thông tin sách', type: BookResponseDto })
+  @ApiProperty({ description: 'Total price' })
+  @Expose()
+  totalPrice: number;
+
+  @ApiProperty({ description: 'Book details', type: BookResponseDto })
   @Expose()
   book: BookResponseDto;
 
-  @ApiProperty({ description: 'Ngày tạo' })
+  @ApiProperty({ description: 'Created date' })
   @Expose()
   createdAt: Date;
 
-  @ApiProperty({ description: 'Ngày cập nhật' })
+  @ApiProperty({ description: 'Updated date' })
   @Expose()
   updatedAt: Date;
 }

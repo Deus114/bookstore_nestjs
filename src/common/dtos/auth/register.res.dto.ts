@@ -1,3 +1,2 @@
-import { CreateResponseDto } from '@src/common/dtos/common';
-
-export class RegisterResponseDto extends CreateResponseDto {}
+import { UserResponseDto } from '@src/common/dtos/user';
+export class RegisterResponseDto extends UserResponseDto {}
