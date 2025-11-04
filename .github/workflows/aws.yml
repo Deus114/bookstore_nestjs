@@ -53,10 +53,8 @@ jobs:
             # Create network if not exists
             docker network create app_network || true
 
-            # Ensure database is running first
             cd /home/${{ secrets.SSH_USER }}
-            # Validate required environment variables
-            echo "Validating required environment variables..."
+
             MISSING_VARS=""
             if [ -z "${{ secrets.DB_NAME }}" ]; then
               MISSING_VARS="${MISSING_VARS} DB_NAME"
@@ -72,137 +70,77 @@ jobs:
             fi
 
             if [ -n "$MISSING_VARS" ]; then
-              echo "Error: Missing required environment variables:$MISSING_VARS"
-              echo "Please ensure all required secrets are set in GitHub Secrets:"
-              echo "  - DB_NAME"
-              echo "  - DB_USERNAME"
-              echo "  - DB_PASSWORD"
-              echo "  - DB_PORT"
               exit 1
             fi
 
-            echo "All required environment variables are present"
-
-            # Create .env file from GitHub Secrets for docker-compose
             echo "DB_NAME=${{ secrets.DB_NAME }}" > .env
             echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> .env
             echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
             echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
-            echo "Created .env file from GitHub Secrets"
 
-            # Verify .env file was created correctly
-            if [ ! -f .env ]; then
-              echo "Error: Failed to create .env file"
+            if [ ! -f .env ] || [ ! -s .env ]; then
               exit 1
             fi
-
-            # Check if .env file has content
-            if [ ! -s .env ]; then
-              echo "Error: .env file is empty"
-              exit 1
-            fi
-
-            echo "Verified .env file exists and has content"
-            # Display .env file (without passwords for security)
-            echo "Environment variables set (values hidden for security):"
-            cat .env | sed 's/\(PASSWORD\)=.*/\1=***/' | sed 's/\(.*\)/  \1/'
-            # Check if docker-compose is available, install if needed
             if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
-              echo "Installing docker-compose..."
               sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
               sudo chmod +x /usr/local/bin/docker-compose
             fi
-            # Check if database container exists (check both postgres_db and prefixed names)
+
             CONTAINER_NAME=$(docker ps -a --format '{{.Names}}' | grep -E '(^postgres_db$|postgres_db$)' | head -n1)
             if [ -n "$CONTAINER_NAME" ]; then
-              echo "Database container found: $CONTAINER_NAME"
-              # Check if container exited with error
               CONTAINER_STATUS=$(docker inspect -f '{{.State.Status}}' "$CONTAINER_NAME" 2>/dev/null || echo "not_found")
               CONTAINER_EXIT_CODE=$(docker inspect -f '{{.State.ExitCode}}' "$CONTAINER_NAME" 2>/dev/null || echo "0")
               
               if [ "$CONTAINER_STATUS" = "exited" ] && [ "$CONTAINER_EXIT_CODE" != "0" ]; then
-                echo "Container exited with error (code: $CONTAINER_EXIT_CODE), checking logs..."
-                docker logs --tail 20 "$CONTAINER_NAME" 2>&1 | head -20
-                echo ""
-                echo "Container has errors. Removing container and volume to start fresh..."
                 docker rm -f "$CONTAINER_NAME" || true
-                docker volume rm $(docker volume ls -q | grep postgres_data) 2>/dev/null || echo "No volume to remove or already removed"
-                echo "Creating new container..."
+                docker volume rm $(docker volume ls -q | grep postgres_data) 2>/dev/null || true
                 CONTAINER_NAME=""
               else
-                echo "Starting existing container..."
-                docker start "$CONTAINER_NAME" || echo "Container already running"
+                docker start "$CONTAINER_NAME" || true
                 export DB_CONTAINER_NAME="$CONTAINER_NAME"
               fi
             fi
 
             if [ -z "$CONTAINER_NAME" ]; then
-              echo "Creating new database container..."
-              # Container doesn't exist, create it (first time only)
               if docker compose version &> /dev/null; then
                 docker compose up -d db
               else
                 docker-compose up -d db
               fi
-              # Wait a moment for container to be created, then get its name
               sleep 2
               CONTAINER_NAME=$(docker ps -a --format '{{.Names}}' | grep -E '(postgres_db$|db$)' | head -n1)
               export DB_CONTAINER_NAME="${CONTAINER_NAME:-postgres_db}"
-              echo "Created container: $DB_CONTAINER_NAME"
             fi
 
-            # Wait for database to be ready
-            echo "Waiting for database to be ready..."
             DB_CONTAINER_NAME="${DB_CONTAINER_NAME:-postgres_db}"
-            echo "Using container name: $DB_CONTAINER_NAME"
             timeout=60
             counter=0
 
-            # First, wait for container to be running
             while [ $counter -lt $timeout ]; do
               container_status=$(docker inspect -f '{{.State.Status}}' "$DB_CONTAINER_NAME" 2>/dev/null || echo "not_found")
               if [ "$container_status" = "running" ]; then
-                echo "Database container is running"
                 break
               elif [ "$container_status" = "exited" ]; then
-                echo "Database container exited with error, checking logs..."
-                docker logs --tail 100 "$DB_CONTAINER_NAME" 2>&1 || echo "Could not retrieve logs"
-                echo "Container exit code: $(docker inspect -f '{{.State.ExitCode}}' "$DB_CONTAINER_NAME" 2>/dev/null || echo "unknown")"
-                echo "Please check the logs above for errors"
                 exit 1
               fi
               sleep 2
               counter=$((counter + 2))
-              echo "Waiting for container to start... ($counter/$timeout seconds)"
             done
 
             if [ "$container_status" != "running" ]; then
-              echo "Database container failed to start"
-              echo "Container status: $container_status"
-              docker logs --tail 100 "$DB_CONTAINER_NAME" 2>&1 || echo "Could not retrieve logs"
               exit 1
             fi
 
-            # Now wait for database to be ready
             counter=0
             until docker exec "$DB_CONTAINER_NAME" pg_isready -U ${{ secrets.DB_USERNAME }} > /dev/null 2>&1 || [ $counter -ge $timeout ]; do
               sleep 2
               counter=$((counter + 2))
-              echo "Waiting for database to be ready... ($counter/$timeout seconds)"
             done
 
             if [ $counter -ge $timeout ]; then
-              echo "Database failed to be ready in time"
-              echo "Checking database container status and logs..."
-              docker ps -a | grep -E "(postgres_db|db)" || echo "Database container not found"
-              docker logs --tail 100 "$DB_CONTAINER_NAME" 2>&1 || echo "Could not retrieve logs"
               exit 1
             fi
 
-            echo "Database is ready!"
-
-            # Validate app container environment variables
-            echo "Validating app container environment variables..."
             APP_MISSING_VARS=""
             if [ -z "${{ secrets.PORT }}" ]; then
               APP_MISSING_VARS="${APP_MISSING_VARS} PORT"
@@ -233,24 +171,12 @@ jobs:
             fi
 
             if [ -n "$APP_MISSING_VARS" ]; then
-              echo "Error: Missing required app environment variables:$APP_MISSING_VARS"
-              echo "Please ensure all required secrets are set in GitHub Secrets"
               exit 1
             fi
 
-            echo "All required app environment variables are present"
-
-            # Stop and remove existing app container
-            echo "Stopping and removing existing app container..."
-            docker stop book_store_nestjs || echo "Container not running or doesn't exist"
-            docker rm book_store_nestjs || echo "Container not found or already removed"
-
-            # Pull latest app image
-            echo "Pulling latest app image..."
+            docker stop book_store_nestjs || true
+            docker rm book_store_nestjs || true
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/book_store_nestjs:latest
-
-            # Start app container
-            echo "Starting app container..."
             DOCKER_CMD="docker run -d --name book_store_nestjs"
             DOCKER_CMD="$DOCKER_CMD --restart unless-stopped"
             DOCKER_CMD="$DOCKER_CMD --network app_network"
@@ -275,26 +201,11 @@ jobs:
             DOCKER_CMD="$DOCKER_CMD ${{ secrets.DOCKERHUB_USERNAME }}/book_store_nestjs:latest"
             eval $DOCKER_CMD
 
-            # Verify app container is running
-            echo "Verifying app container is running..."
             sleep 3
             APP_CONTAINER_STATUS=$(docker inspect -f '{{.State.Status}}' book_store_nestjs 2>/dev/null || echo "not_found")
 
-            if [ "$APP_CONTAINER_STATUS" = "running" ]; then
-              echo "✓ App container is running successfully!"
-              echo "Container ID: $(docker inspect -f '{{.Id}}' book_store_nestjs 2>/dev/null || echo 'unknown')"
-            elif [ "$APP_CONTAINER_STATUS" = "exited" ]; then
-              echo "✗ App container exited with error!"
-              echo "Container exit code: $(docker inspect -f '{{.State.ExitCode}}' book_store_nestjs 2>/dev/null || echo 'unknown')"
-              echo "Last 50 lines of app logs:"
-              docker logs --tail 50 book_store_nestjs 2>&1 || echo "Could not retrieve logs"
-              exit 1
-            else
-              echo "✗ App container status: $APP_CONTAINER_STATUS"
-              echo "Container may not have started properly"
-              docker ps -a | grep book_store_nestjs || echo "Container not found"
+            if [ "$APP_CONTAINER_STATUS" != "running" ]; then
               exit 1
             fi
 
             echo "Deployment completed successfully!"
-            echo "App is accessible at: http://$(hostname -I | awk '{print $1}'):5001"
