@@ -115,13 +115,29 @@ jobs:
             # Check if database container exists (check both postgres_db and prefixed names)
             CONTAINER_NAME=$(docker ps -a --format '{{.Names}}' | grep -E '(^postgres_db$|postgres_db$)' | head -n1)
             if [ -n "$CONTAINER_NAME" ]; then
-              echo "Database container found: $CONTAINER_NAME, starting it..."
-              # Container exists, just start it (preserves data)
-              docker start "$CONTAINER_NAME" || echo "Container already running"
-              # Use the found container name for subsequent commands
-              export DB_CONTAINER_NAME="$CONTAINER_NAME"
-            else
-              echo "Database container not found, creating new one..."
+              echo "Database container found: $CONTAINER_NAME"
+              # Check if container exited with error
+              CONTAINER_STATUS=$(docker inspect -f '{{.State.Status}}' "$CONTAINER_NAME" 2>/dev/null || echo "not_found")
+              CONTAINER_EXIT_CODE=$(docker inspect -f '{{.State.ExitCode}}' "$CONTAINER_NAME" 2>/dev/null || echo "0")
+              
+              if [ "$CONTAINER_STATUS" = "exited" ] && [ "$CONTAINER_EXIT_CODE" != "0" ]; then
+                echo "Container exited with error (code: $CONTAINER_EXIT_CODE), checking logs..."
+                docker logs --tail 20 "$CONTAINER_NAME" 2>&1 | head -20
+                echo ""
+                echo "Container has errors. Removing container and volume to start fresh..."
+                docker rm -f "$CONTAINER_NAME" || true
+                docker volume rm $(docker volume ls -q | grep postgres_data) 2>/dev/null || echo "No volume to remove or already removed"
+                echo "Creating new container..."
+                CONTAINER_NAME=""
+              else
+                echo "Starting existing container..."
+                docker start "$CONTAINER_NAME" || echo "Container already running"
+                export DB_CONTAINER_NAME="$CONTAINER_NAME"
+              fi
+            fi
+
+            if [ -z "$CONTAINER_NAME" ]; then
+              echo "Creating new database container..."
               # Container doesn't exist, create it (first time only)
               if docker compose version &> /dev/null; then
                 docker compose up -d db
