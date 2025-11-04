@@ -1,12 +1,12 @@
 export const config = {
   db: {
-    type: process.env.DB_TYPE,
+    type: process.env.DB_TYPE || 'postgres',
     logging: true,
     host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    username: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
+    port: parseInt(process.env.DB_PORT) || 5432,
+    username: process.env.DB_USERNAME || 'postgres',
+    password: process.env.DB_PASSWORD || '123456',
+    database: process.env.DB_NAME || 'bookstore',
     extra: {
       connectionLimit: 10,
       timezone: 'Asia/Ho_Chi_Minh',
