@@ -112,9 +112,20 @@ export class UsersService {
   async findAll(
     currentPage: number,
     limit: number,
-    qs: string,
+    search?: string,
   ): Promise<PaginatedResponseDto<UserResponseDto>> {
     const queryBuilder = this.userRepositoryService.getQueryBuilder();
+
+    if (search) {
+      queryBuilder.andWhere(
+        `(unaccent(user.fullName) ILIKE :query 
+        OR unaccent(user.email) ILIKE :query 
+        OR unaccent(user.phone) ILIKE :query)`,
+        {
+          query: '%' + search + '%',
+        },
+      );
+    }
 
     const {
       offset,
@@ -124,8 +135,6 @@ export class UsersService {
       currentPage,
       pageSize: limit,
       defaultLimit: 10,
-      qs,
-      alias: 'user',
     });
 
     const result = await queryBuilder.skip(offset).take(finalLimit).getMany();

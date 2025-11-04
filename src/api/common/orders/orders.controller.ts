@@ -60,12 +60,11 @@ export class OrdersController {
   @ResponseMessage('Lấy danh sách đơn hàng thành công')
   async findAll(
     @Query() paginationQuery: PaginationQueryDto,
-    @Query() qs: string,
   ): Promise<PaginatedResponseDto<OrderResponseDto>> {
     return await this.ordersService.findAll(
       paginationQuery.current || 1,
       paginationQuery.pageSize || 10,
-      qs,
+      paginationQuery.search,
     );
   }
 }

@@ -1,5 +1,6 @@
 export * from './base.entity';
 export * from './book.entity';
+export * from './banner.entity';
 export * from './cart-item.entity';
 export * from './cart.entity';
 export * from './category.entity';

@@ -1,13 +1,10 @@
 import { SelectQueryBuilder } from 'typeorm';
 import { PaginatedResponseDto } from '@src/common/dtos/common';
-import aqp from 'api-query-params';
 
 export interface PaginationOptions {
   currentPage?: number;
   pageSize?: number;
   defaultLimit?: number;
-  qs?: string;
-  alias?: string;
 }
 
 export interface PaginationResult<T> {
@@ -35,48 +32,7 @@ export async function paginateQueryBuilder<T>(
   totalItems: number;
   totalPages: number;
 }> {
-  const {
-    currentPage = 1,
-    pageSize = 10,
-    defaultLimit = 10,
-    qs,
-    alias,
-  } = options;
-
-  // Parse query string if provided
-  let filter: any = {};
-  let sort: any = {};
-
-  if (qs) {
-    const parsed = aqp(qs);
-    filter = parsed.filter || {};
-    sort = parsed.sort || {};
-
-    // Remove pagination params from filter
-    delete filter.current;
-    delete filter.pageSize;
-  }
-
-  // Apply filters
-  if (alias && Object.keys(filter).length > 0) {
-    Object.keys(filter).forEach((key) => {
-      if (filter[key] !== undefined && filter[key] !== null) {
-        queryBuilder.andWhere(`${alias}.${key} = :${key}`, {
-          [key]: filter[key],
-        });
-      }
-    });
-  }
-
-  // Apply sorting
-  if (alias && sort && Object.keys(sort).length > 0) {
-    Object.keys(sort).forEach((key) => {
-      queryBuilder.addOrderBy(
-        `${alias}.${key}`,
-        sort[key] === 1 ? 'ASC' : 'DESC',
-      );
-    });
-  }
+  const { currentPage = 1, pageSize = 10, defaultLimit = 10 } = options;
 
   // Calculate pagination
   const limit = +pageSize || defaultLimit;

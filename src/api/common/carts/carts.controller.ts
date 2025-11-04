@@ -15,6 +15,7 @@ import {
   AddProductToCartDto,
   UpdateCartItemQuantityDto,
   CartResponseDto,
+  CartItemResponseDto,
 } from '@src/common/dtos/cart';
 import {
   PaginatedResponseDto,
@@ -29,21 +30,22 @@ export class CartsController {
   constructor(private readonly cartsService: CartsService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Lấy thông tin giỏ hàng' })
+  @ApiOperation({ summary: 'Lấy danh sách sản phẩm trong giỏ hàng' })
   @ApiResponse({
     status: 200,
-    description: 'Lấy thông tin giỏ hàng thành công',
-    type: PaginatedResponseDto<CartResponseDto>,
+    description: 'Lấy danh sách sản phẩm trong giỏ hàng thành công',
+    type: PaginatedResponseDto<CartItemResponseDto>,
   })
-  @ResponseMessage('Lấy thông tin giỏ hàng thành công')
+  @ResponseMessage('Lấy danh sách sản phẩm trong giỏ hàng thành công')
   async getCart(
     @User() user: IUser,
     @Query() paginationQuery: PaginationQueryDto,
-  ): Promise<PaginatedResponseDto<CartResponseDto>> {
+  ): Promise<PaginatedResponseDto<CartItemResponseDto>> {
     return await this.cartsService.getCart(
       user,
       paginationQuery.current || 1,
       paginationQuery.pageSize || 10,
+      paginationQuery.search,
     );
   }
 

@@ -9,9 +9,6 @@ export class Category extends BaseEntity {
   @Column({ type: 'varchar', length: 255 })
   nameKey: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  name: string;
-
   @Column({ type: 'varchar', length: 500, nullable: true })
   descriptionKey: string;
 

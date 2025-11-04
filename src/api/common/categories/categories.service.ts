@@ -5,6 +5,7 @@ import { NotFoundBusinessException } from '@src/common/exceptions/business.excep
 import {
   buildPaginatedResponse,
   paginateQueryBuilder,
+  removeVietnameseAccents,
 } from '@src/common/helpers';
 import { CategoryRepositoryService } from '@src/common/repositories/category';
 import { ContentLanguageRepositoryService } from '@src/common/repositories/content-language';
@@ -21,10 +22,38 @@ export class CategoriesService {
   async findAll(
     currentPage: number,
     limit: number,
-    qs: string,
     language: string = 'vi',
+    search?: string,
   ): Promise<PaginatedResponseDto<CategoryResponseDto>> {
     const queryBuilder = this.categoryRepositoryService.getQueryBuilder();
+
+    if (search) {
+      const normalizedSearch = removeVietnameseAccents(search.trim());
+
+      queryBuilder
+        .leftJoin(
+          'content_language',
+          'nameTranslation',
+          'nameTranslation.key = category.nameKey AND nameTranslation.language = :language',
+          { language },
+        )
+        .leftJoin(
+          'content_language',
+          'descTranslation',
+          'descTranslation.key = category.descriptionKey AND descTranslation.language = :language',
+          { language },
+        )
+        .distinct(true)
+        .andWhere(
+          `(LOWER(unaccent(category.slug)) LIKE :query
+          OR LOWER(unaccent(nameTranslation.content)) LIKE :query
+          OR LOWER(unaccent(descTranslation.content)) LIKE :query)`,
+          {
+            query: '%' + normalizedSearch + '%',
+            language,
+          },
+        );
+    }
 
     const {
       offset,
@@ -34,8 +63,6 @@ export class CategoriesService {
       currentPage,
       pageSize: limit,
       defaultLimit: 10,
-      qs,
-      alias: 'category',
     });
 
     const categories = await queryBuilder
@@ -43,37 +70,50 @@ export class CategoriesService {
       .take(finalLimit)
       .getMany();
 
-    // Lấy tất cả keys cần thiết
-    const nameKeys = categories.map((cat) => cat.nameKey);
-    const descriptionKeys = categories
-      .map((cat) => cat.descriptionKey)
-      .filter(Boolean);
+    if (categories.length === 0) {
+      return buildPaginatedResponse([], totalItems, currentPage, finalLimit);
+    }
 
-    const nameTranslations =
-      await this.contentLanguageRepositoryService.findByKeysAndLanguage(
-        nameKeys,
-        language,
-      );
-    const descriptionTranslations =
-      await this.contentLanguageRepositoryService.findByKeysAndLanguage(
-        descriptionKeys,
-        language,
-      );
+    // Lấy tất cả keys cần thiết (combine trong 1 lần duyệt)
+    const nameKeysSet = new Set<string>();
+    const descriptionKeysSet = new Set<string>();
 
-    // Tạo translations map
-    const translationsMap = new Map();
-    categories.forEach((category) => {
-      const nameTranslation = nameTranslations.find(
-        (t) => t.key === category.nameKey,
-      );
-      const descriptionTranslation = descriptionTranslations.find(
-        (t) => t.key === category.descriptionKey,
-      );
-      translationsMap.set(category.id, {
-        nameTranslation,
-        descriptionTranslation,
-      });
+    categories.forEach((cat) => {
+      if (cat.nameKey) nameKeysSet.add(cat.nameKey);
+      if (cat.descriptionKey) descriptionKeysSet.add(cat.descriptionKey);
     });
+
+    const nameKeys = Array.from(nameKeysSet);
+    const descriptionKeys = Array.from(descriptionKeysSet);
+
+    // Query translations song song nếu có keys
+    const [nameTranslations, descriptionTranslations] = await Promise.all([
+      nameKeys.length > 0
+        ? this.contentLanguageRepositoryService.findByKeysAndLanguage(
+            nameKeys,
+            language,
+          )
+        : Promise.resolve([]),
+      descriptionKeys.length > 0
+        ? this.contentLanguageRepositoryService.findByKeysAndLanguage(
+            descriptionKeys,
+            language,
+          )
+        : Promise.resolve([]),
+    ]);
+
+    // Tạo translations map bằng reduce
+    const translationsMap = categories.reduce((map, category) => {
+      map.set(category.id, {
+        nameTranslation: nameTranslations.find(
+          (t) => t.key === category.nameKey,
+        ),
+        descriptionTranslation: descriptionTranslations.find(
+          (t) => t.key === category.descriptionKey,
+        ),
+      });
+      return map;
+    }, new Map());
 
     return buildPaginatedResponse(
       CategoriesResource(categories, translationsMap),
@@ -92,17 +132,18 @@ export class CategoriesService {
       throw new NotFoundBusinessException('CATEGORY_NOT_FOUND');
     }
 
-    // Lấy translations
-    const nameTranslation =
-      await this.contentLanguageRepositoryService.findByKeyAndLanguage(
+    const [nameTranslation, descriptionTranslation] = await Promise.all([
+      this.contentLanguageRepositoryService.findByKeyAndLanguage(
         category.nameKey,
         language,
-      );
-    const descriptionTranslation =
-      await this.contentLanguageRepositoryService.findByKeyAndLanguage(
-        category.descriptionKey,
-        language,
-      );
+      ),
+      category.descriptionKey
+        ? this.contentLanguageRepositoryService.findByKeyAndLanguage(
+            category.descriptionKey,
+            language,
+          )
+        : Promise.resolve(null),
+    ]);
 
     return CategoryResource(category, nameTranslation, descriptionTranslation);
   }

@@ -5,6 +5,7 @@ import { CartsModule } from './carts/carts.module';
 import { CategoriesModule } from './categories/categories.module';
 import { FilesModule } from './files/files.module';
 import { OrdersModule } from './orders/orders.module';
+import { BannersModule } from './banners/banners.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { OrdersModule } from './orders/orders.module';
     CartsModule,
     OrdersModule,
     FilesModule,
+    BannersModule,
   ],
   exports: [
     AuthModule,
@@ -22,6 +24,7 @@ import { OrdersModule } from './orders/orders.module';
     CartsModule,
     OrdersModule,
     FilesModule,
+    BannersModule,
   ],
 })
 export class CommonModule {}

@@ -16,9 +16,19 @@ export class BooksService {
   async findAll(
     currentPage: number,
     limit: number,
-    qs: string,
+    search?: string,
   ): Promise<PaginatedResponseDto<BookResponseDto>> {
     const queryBuilder = this.bookRepositoryService.getQueryBuilder();
+
+    if (search) {
+      queryBuilder.andWhere(
+        `(unaccent(book.mainText) ILIKE :query
+        OR unaccent(book.author) ILIKE :query)`,
+        {
+          query: '%' + search + '%',
+        },
+      );
+    }
 
     const {
       offset,
@@ -28,8 +38,6 @@ export class BooksService {
       currentPage,
       pageSize: limit,
       defaultLimit: 10,
-      qs,
-      alias: 'book',
     });
 
     const result = await queryBuilder.skip(offset).take(finalLimit).getMany();

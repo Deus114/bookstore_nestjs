@@ -9,6 +9,7 @@ import { AdminModule } from './api/admin/admin.module';
 import { BooksModule as AdminBooksModule } from './api/admin/books/books.module';
 import { UsersModule } from './api/admin/users/users.module';
 import { CategoriesModule as AdminCategoriesModule } from './api/admin/categories/categories.module';
+import { BannersModule as AdminBannersModule } from './api/admin/banners/banners.module';
 import { CommonModule } from './api/common/common.module';
 import { BooksModule as CommonBooksModule } from './api/common/books/books.module';
 import { CategoriesModule as CommonCategoriesModule } from './api/common/categories/categories.module';
@@ -16,6 +17,7 @@ import { AuthModule } from './api/common/auth/auth.module';
 import { CartsModule } from './api/common/carts/carts.module';
 import { OrdersModule } from './api/common/orders/orders.module';
 import { FilesModule } from './api/common/files/files.module';
+import { BannersModule as CommonBannersModule } from './api/common/banners/banners.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ErrorMessageService } from './common/services/error-message.service';
@@ -64,6 +66,10 @@ import { LanguageMiddleware } from './common/middleware/language.middleware';
             path: 'categories',
             module: AdminCategoriesModule,
           },
+          {
+            path: 'banners',
+            module: AdminBannersModule,
+          },
         ],
       },
       {
@@ -93,6 +99,10 @@ import { LanguageMiddleware } from './common/middleware/language.middleware';
           {
             path: 'file',
             module: FilesModule,
+          },
+          {
+            path: 'banners',
+            module: CommonBannersModule,
           },
         ],
       },

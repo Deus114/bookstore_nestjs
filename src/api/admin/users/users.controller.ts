@@ -22,7 +22,7 @@ import {
 } from '@src/common/dtos/user';
 import { IUser } from '@src/common/utils/interfaces';
 import { EntityId } from '@src/common/utils/types';
-import { ResponseMessage, User } from '@src/decorator/customize';
+import { Public, ResponseMessage, User } from '@src/decorator/customize';
 import { UsersService } from './users.service';
 
 @ApiTags('Users')
@@ -30,6 +30,7 @@ import { UsersService } from './users.service';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @Public()
   @ResponseMessage('Tạo mới người dùng thành công')
   @ApiResponse({
     status: 201,
@@ -67,12 +68,11 @@ export class UsersController {
   })
   async findAll(
     @Query() paginationQuery: PaginationQueryDto,
-    @Query() qs: string,
   ): Promise<PaginatedResponseDto<UserResponseDto>> {
     return await this.usersService.findAll(
       paginationQuery.current || 1,
       paginationQuery.pageSize || 10,
-      qs,
+      paginationQuery.search,
     );
   }
 

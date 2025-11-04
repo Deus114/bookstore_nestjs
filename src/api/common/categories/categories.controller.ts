@@ -25,15 +25,14 @@ export class CategoriesController {
   @ResponseMessage('Lấy danh sách categories thành công')
   async findAll(
     @Query() paginationQuery: PaginationQueryDto,
-    @Query() qs: string,
     @Req() req: any,
   ): Promise<PaginatedResponseDto<CategoryResponseDto>> {
     const language = req.language;
     return await this.categoriesService.findAll(
       paginationQuery.current || 1,
       paginationQuery.pageSize || 10,
-      qs,
       language,
+      paginationQuery.search,
     );
   }
 

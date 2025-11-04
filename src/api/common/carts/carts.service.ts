@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import {
   AddProductToCartDto,
+  CartItemResponseDto,
   CartResponseDto,
   UpdateCartItemQuantityDto,
 } from '@src/common/dtos/cart';
@@ -10,11 +11,11 @@ import {
   BadRequestBusinessException,
   NotFoundBusinessException,
 } from '@src/common/exceptions/business.exception';
-import { paginateArray } from '@src/common/helpers';
+import { buildPaginatedResponse, paginateArray } from '@src/common/helpers';
 import { BookRepositoryService } from '@src/common/repositories/book';
 import { CartRepositoryService } from '@src/common/repositories/cart';
 import { CartItemRepositoryService } from '@src/common/repositories/cart-item';
-import { CartResource } from '@src/common/resources';
+import { CartItemsResource, CartResource } from '@src/common/resources';
 import { IUser } from '@src/common/utils/interfaces';
 import { EntityId } from '@src/common/utils/types';
 import { DataSource } from 'typeorm';
@@ -31,35 +32,45 @@ export class CartsService {
   async getCart(
     user: IUser,
     currentPage: number = 1,
-    pageSize: number | string = 20,
-  ): Promise<PaginatedResponseDto<CartResponseDto>> {
+    pageSize: number,
+    search?: string,
+  ): Promise<PaginatedResponseDto<CartItemResponseDto>> {
     const cart = await this.cartRepositoryService.findOrCreateByUserId(
       user.id as EntityId,
       ['items', 'items.book'],
     );
 
-    const allItems = cart.items || [];
+    let allItems = cart.items || [];
+
+    if (search) {
+      const lowerSearch = search.toLowerCase();
+      allItems = allItems.filter((item) => {
+        if (!item.book) return false;
+
+        const bookName = (item.book.mainText || '').toLowerCase();
+        const bookAuthor = (item.book.author || '').toLowerCase();
+
+        return (
+          bookName.includes(lowerSearch) || bookAuthor.includes(lowerSearch)
+        );
+      });
+    }
+
+    const totalItems = allItems.length;
 
     // Paginate items array
-    const { data: paginatedItems, meta } = paginateArray(
+    const { data: paginatedItems } = paginateArray(
       allItems,
       currentPage,
       pageSize,
     );
 
-    // Create cart copy with paginated items for response
-    const cartWithPaginatedItems = Object.assign(
-      Object.create(Object.getPrototypeOf(cart)),
-      cart,
+    return buildPaginatedResponse(
+      CartItemsResource(paginatedItems),
+      totalItems,
+      currentPage,
+      pageSize,
     );
-    cartWithPaginatedItems.items = paginatedItems;
-
-    const cartResponse = CartResource(cartWithPaginatedItems);
-
-    return {
-      meta,
-      result: [cartResponse],
-    };
   }
 
   async addProduct(

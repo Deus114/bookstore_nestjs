@@ -13,6 +13,7 @@
   "PHONE_ALREADY_EXISTS": "Số điện thoại đã tồn tại",
   "BOOK_NOT_FOUND": "Không tìm thấy sách",
   "CATEGORY_NOT_FOUND": "Không tìm thấy danh mục",
+  "BANNER_NOT_FOUND": "Không tìm thấy banner",
   "ORDER_NOT_FOUND": "Không tìm thấy đơn hàng",
   "INVALID_PASSWORD": "Mật khẩu không đúng",
   "INVALID_REFRESH_TOKEN": "Refresh token không hợp lệ, vui lòng đăng nhập",

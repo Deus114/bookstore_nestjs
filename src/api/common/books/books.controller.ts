@@ -25,12 +25,11 @@ export class BooksController {
   @ResponseMessage('Lấy danh sách sách thành công')
   async findAll(
     @Query() paginationQuery: PaginationQueryDto,
-    @Query() qs: string,
   ): Promise<PaginatedResponseDto<BookResponseDto>> {
     return await this.booksService.findAll(
       paginationQuery.current || 1,
       paginationQuery.pageSize || 10,
-      qs,
+      paginationQuery.search,
     );
   }
 

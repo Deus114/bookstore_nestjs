@@ -359,9 +359,15 @@ export class OrdersService {
   async findAll(
     currentPage: number,
     limit: number,
-    qs: string,
+    search?: string,
   ): Promise<PaginatedResponseDto<OrderResponseDto>> {
     const queryBuilder = this.orderRepositoryService.getQueryBuilder();
+
+    if (search) {
+      queryBuilder.andWhere(`(unaccent(order.orderCode) ILIKE :query)`, {
+        query: '%' + search + '%',
+      });
+    }
 
     const {
       offset,
@@ -371,8 +377,6 @@ export class OrdersService {
       currentPage,
       pageSize: limit,
       defaultLimit: 10,
-      qs,
-      alias: 'order',
     });
 
     const result = await queryBuilder.skip(offset).take(finalLimit).getMany();
