@@ -55,23 +55,71 @@ jobs:
 
             # Ensure database is running first
             cd /home/${{ secrets.SSH_USER }}
+            # Validate required environment variables
+            echo "Validating required environment variables..."
+            MISSING_VARS=""
+            if [ -z "${{ secrets.DB_NAME }}" ]; then
+              MISSING_VARS="${MISSING_VARS} DB_NAME"
+            fi
+            if [ -z "${{ secrets.DB_USERNAME }}" ]; then
+              MISSING_VARS="${MISSING_VARS} DB_USERNAME"
+            fi
+            if [ -z "${{ secrets.DB_PASSWORD }}" ]; then
+              MISSING_VARS="${MISSING_VARS} DB_PASSWORD"
+            fi
+            if [ -z "${{ secrets.DB_PORT }}" ]; then
+              MISSING_VARS="${MISSING_VARS} DB_PORT"
+            fi
+
+            if [ -n "$MISSING_VARS" ]; then
+              echo "Error: Missing required environment variables:$MISSING_VARS"
+              echo "Please ensure all required secrets are set in GitHub Secrets:"
+              echo "  - DB_NAME"
+              echo "  - DB_USERNAME"
+              echo "  - DB_PASSWORD"
+              echo "  - DB_PORT"
+              exit 1
+            fi
+
+            echo "All required environment variables are present"
+
             # Create .env file from GitHub Secrets for docker-compose
             echo "DB_NAME=${{ secrets.DB_NAME }}" > .env
             echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> .env
             echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
             echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
             echo "Created .env file from GitHub Secrets"
+
+            # Verify .env file was created correctly
+            if [ ! -f .env ]; then
+              echo "Error: Failed to create .env file"
+              exit 1
+            fi
+
+            # Check if .env file has content
+            if [ ! -s .env ]; then
+              echo "Error: .env file is empty"
+              exit 1
+            fi
+
+            echo "Verified .env file exists and has content"
+            # Display .env file (without passwords for security)
+            echo "Environment variables set (values hidden for security):"
+            cat .env | sed 's/\(PASSWORD\)=.*/\1=***/' | sed 's/\(.*\)/  \1/'
             # Check if docker-compose is available, install if needed
             if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
               echo "Installing docker-compose..."
               sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
               sudo chmod +x /usr/local/bin/docker-compose
             fi
-            # Check if database container exists
-            if docker ps -a --format '{{.Names}}' | grep -q '^postgres_db$'; then
-              echo "Database container already exists, starting it..."
+            # Check if database container exists (check both postgres_db and prefixed names)
+            CONTAINER_NAME=$(docker ps -a --format '{{.Names}}' | grep -E '(^postgres_db$|postgres_db$)' | head -n1)
+            if [ -n "$CONTAINER_NAME" ]; then
+              echo "Database container found: $CONTAINER_NAME, starting it..."
               # Container exists, just start it (preserves data)
-              docker start postgres_db || echo "Container already running"
+              docker start "$CONTAINER_NAME" || echo "Container already running"
+              # Use the found container name for subsequent commands
+              export DB_CONTAINER_NAME="$CONTAINER_NAME"
             else
               echo "Database container not found, creating new one..."
               # Container doesn't exist, create it (first time only)
@@ -80,26 +128,101 @@ jobs:
               else
                 docker-compose up -d db
               fi
+              # Wait a moment for container to be created, then get its name
+              sleep 2
+              CONTAINER_NAME=$(docker ps -a --format '{{.Names}}' | grep -E '(postgres_db$|db$)' | head -n1)
+              export DB_CONTAINER_NAME="${CONTAINER_NAME:-postgres_db}"
+              echo "Created container: $DB_CONTAINER_NAME"
             fi
 
             # Wait for database to be ready
             echo "Waiting for database to be ready..."
+            DB_CONTAINER_NAME="${DB_CONTAINER_NAME:-postgres_db}"
+            echo "Using container name: $DB_CONTAINER_NAME"
             timeout=60
             counter=0
-            until docker exec postgres_db pg_isready -U ${{ secrets.DB_USERNAME }} > /dev/null 2>&1 || [ $counter -eq $timeout ]; do
+
+            # First, wait for container to be running
+            while [ $counter -lt $timeout ]; do
+              container_status=$(docker inspect -f '{{.State.Status}}' "$DB_CONTAINER_NAME" 2>/dev/null || echo "not_found")
+              if [ "$container_status" = "running" ]; then
+                echo "Database container is running"
+                break
+              elif [ "$container_status" = "exited" ]; then
+                echo "Database container exited with error, checking logs..."
+                docker logs --tail 100 "$DB_CONTAINER_NAME" 2>&1 || echo "Could not retrieve logs"
+                echo "Container exit code: $(docker inspect -f '{{.State.ExitCode}}' "$DB_CONTAINER_NAME" 2>/dev/null || echo "unknown")"
+                echo "Please check the logs above for errors"
+                exit 1
+              fi
               sleep 2
               counter=$((counter + 2))
-              echo "Waiting for database... ($counter/$timeout seconds)"
+              echo "Waiting for container to start... ($counter/$timeout seconds)"
+            done
+
+            if [ "$container_status" != "running" ]; then
+              echo "Database container failed to start"
+              echo "Container status: $container_status"
+              docker logs --tail 100 "$DB_CONTAINER_NAME" 2>&1 || echo "Could not retrieve logs"
+              exit 1
+            fi
+
+            # Now wait for database to be ready
+            counter=0
+            until docker exec "$DB_CONTAINER_NAME" pg_isready -U ${{ secrets.DB_USERNAME }} > /dev/null 2>&1 || [ $counter -ge $timeout ]; do
+              sleep 2
+              counter=$((counter + 2))
+              echo "Waiting for database to be ready... ($counter/$timeout seconds)"
             done
 
             if [ $counter -ge $timeout ]; then
-              echo "Database failed to start in time"
-              echo "Checking database container status..."
-              docker ps -a | grep postgres_db || echo "Database container not found"
+              echo "Database failed to be ready in time"
+              echo "Checking database container status and logs..."
+              docker ps -a | grep -E "(postgres_db|db)" || echo "Database container not found"
+              docker logs --tail 100 "$DB_CONTAINER_NAME" 2>&1 || echo "Could not retrieve logs"
               exit 1
             fi
 
             echo "Database is ready!"
+
+            # Validate app container environment variables
+            echo "Validating app container environment variables..."
+            APP_MISSING_VARS=""
+            if [ -z "${{ secrets.PORT }}" ]; then
+              APP_MISSING_VARS="${APP_MISSING_VARS} PORT"
+            fi
+            if [ -z "${{ secrets.DB_TYPE }}" ]; then
+              APP_MISSING_VARS="${APP_MISSING_VARS} DB_TYPE"
+            fi
+            if [ -z "${{ secrets.DB_HOST }}" ]; then
+              APP_MISSING_VARS="${APP_MISSING_VARS} DB_HOST"
+            fi
+            if [ -z "${{ secrets.JWT_ACCESS_TOKEN }}" ]; then
+              APP_MISSING_VARS="${APP_MISSING_VARS} JWT_ACCESS_TOKEN"
+            fi
+            if [ -z "${{ secrets.JWT_REFRESH_TOKEN }}" ]; then
+              APP_MISSING_VARS="${APP_MISSING_VARS} JWT_REFRESH_TOKEN"
+            fi
+            if [ -z "${{ secrets.STORAGE_BUCKET }}" ]; then
+              APP_MISSING_VARS="${APP_MISSING_VARS} STORAGE_BUCKET"
+            fi
+            if [ -z "${{ secrets.AWS_REGION }}" ]; then
+              APP_MISSING_VARS="${APP_MISSING_VARS} AWS_REGION"
+            fi
+            if [ -z "${{ secrets.AWS_ACCESS_KEY_ID }}" ]; then
+              APP_MISSING_VARS="${APP_MISSING_VARS} AWS_ACCESS_KEY_ID"
+            fi
+            if [ -z "${{ secrets.AWS_SECRET_ACCESS_KEY }}" ]; then
+              APP_MISSING_VARS="${APP_MISSING_VARS} AWS_SECRET_ACCESS_KEY"
+            fi
+
+            if [ -n "$APP_MISSING_VARS" ]; then
+              echo "Error: Missing required app environment variables:$APP_MISSING_VARS"
+              echo "Please ensure all required secrets are set in GitHub Secrets"
+              exit 1
+            fi
+
+            echo "All required app environment variables are present"
 
             # Stop and remove existing app container
             docker stop book_store_nestjs || true
