@@ -9,6 +9,7 @@ export const config = {
     database: process.env.DB_NAME || 'bookstore',
     extra: {
       connectionLimit: 10,
+      timezone: 'Asia/Ho_Chi_Minh',
     },
     autoLoadEntities: true,
     synchronize:

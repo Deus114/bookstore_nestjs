@@ -241,13 +241,16 @@ jobs:
             echo "All required app environment variables are present"
 
             # Stop and remove existing app container
-            docker stop book_store_nestjs || true
-            docker rm book_store_nestjs || true
+            echo "Stopping and removing existing app container..."
+            docker stop book_store_nestjs || echo "Container not running or doesn't exist"
+            docker rm book_store_nestjs || echo "Container not found or already removed"
 
             # Pull latest app image
+            echo "Pulling latest app image..."
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/book_store_nestjs:latest
 
             # Start app container
+            echo "Starting app container..."
             docker run -d --name book_store_nestjs \
               --restart unless-stopped \
               --network app_network \
@@ -271,4 +274,26 @@ jobs:
               -e AWS_S3_ENDPOINT=${{ secrets.AWS_S3_ENDPOINT }} \
               ${{ secrets.DOCKERHUB_USERNAME }}/book_store_nestjs:latest
 
+            # Verify app container is running
+            echo "Verifying app container is running..."
+            sleep 3
+            APP_CONTAINER_STATUS=$(docker inspect -f '{{.State.Status}}' book_store_nestjs 2>/dev/null || echo "not_found")
+
+            if [ "$APP_CONTAINER_STATUS" = "running" ]; then
+              echo "✓ App container is running successfully!"
+              echo "Container ID: $(docker inspect -f '{{.Id}}' book_store_nestjs 2>/dev/null || echo 'unknown')"
+            elif [ "$APP_CONTAINER_STATUS" = "exited" ]; then
+              echo "✗ App container exited with error!"
+              echo "Container exit code: $(docker inspect -f '{{.State.ExitCode}}' book_store_nestjs 2>/dev/null || echo 'unknown')"
+              echo "Last 50 lines of app logs:"
+              docker logs --tail 50 book_store_nestjs 2>&1 || echo "Could not retrieve logs"
+              exit 1
+            else
+              echo "✗ App container status: $APP_CONTAINER_STATUS"
+              echo "Container may not have started properly"
+              docker ps -a | grep book_store_nestjs || echo "Container not found"
+              exit 1
+            fi
+
             echo "Deployment completed successfully!"
+            echo "App is accessible at: http://$(hostname -I | awk '{print $1}'):5001"
