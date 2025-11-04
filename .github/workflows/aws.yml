@@ -251,28 +251,29 @@ jobs:
 
             # Start app container
             echo "Starting app container..."
-            docker run -d --name book_store_nestjs \
-              --restart unless-stopped \
-              --network app_network \
-              -p 5001:5001 \
-              -e NODE_ENV=production \
-              -e PORT=${{ secrets.PORT }} \
-              -e DB_TYPE=${{ secrets.DB_TYPE }} \
-              -e DB_HOST=${{ secrets.DB_HOST }} \
-              -e DB_PORT=${{ secrets.DB_PORT }} \
-              -e DB_USERNAME=${{ secrets.DB_USERNAME }} \
-              -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
-              -e DB_NAME=${{ secrets.DB_NAME }} \
-              -e JWT_ACCESS_TOKEN=${{ secrets.JWT_ACCESS_TOKEN }} \
-              -e JWT_REFRESH_TOKEN=${{ secrets.JWT_REFRESH_TOKEN }} \
-              -e JWT_ACCESS_EXPIRE=${{ secrets.JWT_ACCESS_EXPIRE }} \
-              -e JWT_REFRESH_EXPIRE=${{ secrets.JWT_REFRESH_EXPIRE }} \
-              -e STORAGE_BUCKET=${{ secrets.STORAGE_BUCKET }} \
-              -e AWS_REGION=${{ secrets.AWS_REGION }} \
-              -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
-              -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
-              -e AWS_S3_ENDPOINT=${{ secrets.AWS_S3_ENDPOINT }} \
-              ${{ secrets.DOCKERHUB_USERNAME }}/book_store_nestjs:latest
+            DOCKER_CMD="docker run -d --name book_store_nestjs"
+            DOCKER_CMD="$DOCKER_CMD --restart unless-stopped"
+            DOCKER_CMD="$DOCKER_CMD --network app_network"
+            DOCKER_CMD="$DOCKER_CMD -p 5001:5001"
+            DOCKER_CMD="$DOCKER_CMD -e NODE_ENV=production"
+            DOCKER_CMD="$DOCKER_CMD -e PORT=${{ secrets.PORT }}"
+            DOCKER_CMD="$DOCKER_CMD -e DB_TYPE=${{ secrets.DB_TYPE }}"
+            DOCKER_CMD="$DOCKER_CMD -e DB_HOST=${{ secrets.DB_HOST }}"
+            DOCKER_CMD="$DOCKER_CMD -e DB_PORT=${{ secrets.DB_PORT }}"
+            DOCKER_CMD="$DOCKER_CMD -e DB_USERNAME=${{ secrets.DB_USERNAME }}"
+            DOCKER_CMD="$DOCKER_CMD -e DB_PASSWORD=${{ secrets.DB_PASSWORD }}"
+            DOCKER_CMD="$DOCKER_CMD -e DB_NAME=${{ secrets.DB_NAME }}"
+            DOCKER_CMD="$DOCKER_CMD -e JWT_ACCESS_TOKEN=${{ secrets.JWT_ACCESS_TOKEN }}"
+            DOCKER_CMD="$DOCKER_CMD -e JWT_REFRESH_TOKEN=${{ secrets.JWT_REFRESH_TOKEN }}"
+            DOCKER_CMD="$DOCKER_CMD -e JWT_ACCESS_EXPIRE=${{ secrets.JWT_ACCESS_EXPIRE }}"
+            DOCKER_CMD="$DOCKER_CMD -e JWT_REFRESH_EXPIRE=${{ secrets.JWT_REFRESH_EXPIRE }}"
+            DOCKER_CMD="$DOCKER_CMD -e STORAGE_BUCKET=${{ secrets.STORAGE_BUCKET }}"
+            DOCKER_CMD="$DOCKER_CMD -e AWS_REGION=${{ secrets.AWS_REGION }}"
+            DOCKER_CMD="$DOCKER_CMD -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}"
+            DOCKER_CMD="$DOCKER_CMD -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+            DOCKER_CMD="$DOCKER_CMD -e AWS_S3_ENDPOINT=${{ secrets.AWS_S3_ENDPOINT }}"
+            DOCKER_CMD="$DOCKER_CMD ${{ secrets.DOCKERHUB_USERNAME }}/book_store_nestjs:latest"
+            eval $DOCKER_CMD
 
             # Verify app container is running
             echo "Verifying app container is running..."
