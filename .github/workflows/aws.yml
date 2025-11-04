@@ -55,20 +55,47 @@ jobs:
 
             # Ensure database is running first
             cd /home/${{ secrets.SSH_USER }}
-            docker-compose up -d db
+            # Create .env file from GitHub Secrets for docker-compose
+            echo "DB_NAME=${{ secrets.DB_NAME }}" > .env
+            echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> .env
+            echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+            echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
+            echo "Created .env file from GitHub Secrets"
+            # Check if docker-compose is available, install if needed
+            if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
+              echo "Installing docker-compose..."
+              sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+              sudo chmod +x /usr/local/bin/docker-compose
+            fi
+            # Check if database container exists
+            if docker ps -a --format '{{.Names}}' | grep -q '^postgres_db$'; then
+              echo "Database container already exists, starting it..."
+              # Container exists, just start it (preserves data)
+              docker start postgres_db || echo "Container already running"
+            else
+              echo "Database container not found, creating new one..."
+              # Container doesn't exist, create it (first time only)
+              if docker compose version &> /dev/null; then
+                docker compose up -d db
+              else
+                docker-compose up -d db
+              fi
+            fi
 
             # Wait for database to be ready
             echo "Waiting for database to be ready..."
-            timeout=30
+            timeout=60
             counter=0
-            until docker exec postgres_db pg_isready -U ${{ secrets.DB_USERNAME }} || [ $counter -eq $timeout ]; do
-              sleep 1
-              counter=$((counter + 1))
-              echo "Waiting for database... ($counter/$timeout)"
+            until docker exec postgres_db pg_isready -U ${{ secrets.DB_USERNAME }} > /dev/null 2>&1 || [ $counter -eq $timeout ]; do
+              sleep 2
+              counter=$((counter + 2))
+              echo "Waiting for database... ($counter/$timeout seconds)"
             done
 
-            if [ $counter -eq $timeout ]; then
+            if [ $counter -ge $timeout ]; then
               echo "Database failed to start in time"
+              echo "Checking database container status..."
+              docker ps -a | grep postgres_db || echo "Database container not found"
               exit 1
             fi
 
