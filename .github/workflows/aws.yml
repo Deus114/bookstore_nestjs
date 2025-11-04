@@ -13,6 +13,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -20,32 +23,86 @@ jobs:
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
       - name: Build and Push Docker Image
-        run: |
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/easy-farm:latest .
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/easy-farm:latest
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/book_store_nestjs:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/book_store_nestjs:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/book_store_nestjs:buildcache,mode=max
+
+      - name: Copy docker-compose.yml to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: 'docker-compose.yml'
+          target: '/home/${{ secrets.SSH_USER }}/'
 
       - name: SSH into EC2 and deploy
-        uses: appleboy/ssh-action@v0.1.7
+        uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            # Login to Docker Hub
             docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
-            docker stop easy-farm || true
-            docker rm easy-farm || true
-            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/easy-farm:latest
-            docker run -d --name easy-farm \
-              -p 8000:8000 \
+
+            # Create network if not exists
+            docker network create app_network || true
+
+            # Ensure database is running first
+            cd /home/${{ secrets.SSH_USER }}
+            docker-compose up -d db
+
+            # Wait for database to be ready
+            echo "Waiting for database to be ready..."
+            timeout=30
+            counter=0
+            until docker exec postgres_db pg_isready -U ${{ secrets.DB_USERNAME }} || [ $counter -eq $timeout ]; do
+              sleep 1
+              counter=$((counter + 1))
+              echo "Waiting for database... ($counter/$timeout)"
+            done
+
+            if [ $counter -eq $timeout ]; then
+              echo "Database failed to start in time"
+              exit 1
+            fi
+
+            echo "Database is ready!"
+
+            # Stop and remove existing app container
+            docker stop book_store_nestjs || true
+            docker rm book_store_nestjs || true
+
+            # Pull latest app image
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/book_store_nestjs:latest
+
+            # Start app container
+            docker run -d --name book_store_nestjs \
+              --restart unless-stopped \
+              --network app_network \
+              -p 5001:5001 \
+              -e NODE_ENV=production \
               -e PORT=${{ secrets.PORT }} \
-              -e DATABASE_URL=${{ secrets.DATABASE_URL }} \
+              -e DB_TYPE=${{ secrets.DB_TYPE }} \
+              -e DB_HOST=${{ secrets.DB_HOST }} \
+              -e DB_PORT=${{ secrets.DB_PORT }} \
+              -e DB_USERNAME=${{ secrets.DB_USERNAME }} \
+              -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
+              -e DB_NAME=${{ secrets.DB_NAME }} \
               -e JWT_ACCESS_TOKEN=${{ secrets.JWT_ACCESS_TOKEN }} \
-              -e JWT_ACCESS_EXPIRE=${{ secrets.JWT_ACCESS_EXPIRE }} \
               -e JWT_REFRESH_TOKEN=${{ secrets.JWT_REFRESH_TOKEN }} \
+              -e JWT_ACCESS_EXPIRE=${{ secrets.JWT_ACCESS_EXPIRE }} \
               -e JWT_REFRESH_EXPIRE=${{ secrets.JWT_REFRESH_EXPIRE }} \
-              -e EMAIL_HOST=${{ secrets.EMAIL_HOST }} \
-              -e EMAIL_USER=${{ secrets.EMAIL_USER }} \
-              -e EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }} \
-              -e REDIS_HOST=${{ secrets.REDIS_HOST }} \
-              -e REDIS_PORT=${{ secrets.REDIS_PORT }} \
-              ${{ secrets.DOCKERHUB_USERNAME }}/easy-farm:latest
+              -e STORAGE_BUCKET=${{ secrets.STORAGE_BUCKET }} \
+              -e AWS_REGION=${{ secrets.AWS_REGION }} \
+              -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
+              -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
+              -e AWS_S3_ENDPOINT=${{ secrets.AWS_S3_ENDPOINT }} \
+              ${{ secrets.DOCKERHUB_USERNAME }}/book_store_nestjs:latest
+
+            echo "Deployment completed successfully!"
