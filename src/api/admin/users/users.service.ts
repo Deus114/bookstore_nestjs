@@ -101,12 +101,10 @@ export class UsersService {
     user.phone = createUserDto.phone;
     user.isActive = true;
     user.type = UserType.SYSTEM;
-    user.createdBy = i_user.id;
+    user.createdBy = (i_user?.id as EntityId) || null;
 
     const result = await this.userRepositoryService.create(user);
-
-    const savedUser = await this.userRepositoryService.findOne(result.id);
-    return UserResource(savedUser);
+    return UserResource(result);
   }
 
   async findAll(
