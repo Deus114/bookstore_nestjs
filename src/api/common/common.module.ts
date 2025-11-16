@@ -1,11 +1,13 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from './auth/auth.module';
+import { BannersModule } from './banners/banners.module';
 import { BooksModule } from './books/books.module';
 import { CartsModule } from './carts/carts.module';
 import { CategoriesModule } from './categories/categories.module';
 import { FilesModule } from './files/files.module';
 import { OrdersModule } from './orders/orders.module';
-import { BannersModule } from './banners/banners.module';
+import { UsersModule } from './users/users.module';
+import { VouchersModule } from './vouchers/vouchers.module';
 
 @Module({
   imports: [
@@ -16,6 +18,8 @@ import { BannersModule } from './banners/banners.module';
     OrdersModule,
     FilesModule,
     BannersModule,
+    UsersModule,
+    VouchersModule,
   ],
   exports: [
     AuthModule,
@@ -25,6 +29,8 @@ import { BannersModule } from './banners/banners.module';
     OrdersModule,
     FilesModule,
     BannersModule,
+    UsersModule,
+    VouchersModule,
   ],
 })
 export class CommonModule {}

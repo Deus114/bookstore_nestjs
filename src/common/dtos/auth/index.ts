@@ -1,5 +1,6 @@
 export * from './login-user.req.dto';
 export * from './user-info.res.dto';
+export * from './user-address-info.dto';
 export * from './login.res.dto';
 export * from './register.res.dto';
 export * from './account.res.dto';

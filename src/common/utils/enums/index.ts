@@ -43,3 +43,20 @@ export enum UserType {
   GOOGLE = 'GOOGLE',
   FACEBOOK = 'FACEBOOK',
 }
+
+// Gender
+export enum Gender {
+  MALE = 'MALE',
+  FEMALE = 'FEMALE',
+  OTHER = 'OTHER',
+}
+
+export enum VoucherType {
+  DISCOUNT = 'DISCOUNT',
+  SHIPPING = 'SHIPPING',
+}
+
+export enum VoucherDiscountType {
+  PERCENTAGE = 'PERCENTAGE',
+  FIXED = 'FIXED',
+}

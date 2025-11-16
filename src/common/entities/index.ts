@@ -9,3 +9,5 @@ export * from './order-detail.entity';
 export * from './order.entity';
 export * from './user-address.entity';
 export * from './user.entity';
+export * from './voucher.entity';
+export * from './user-voucher.entity';

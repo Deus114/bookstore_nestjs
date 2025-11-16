@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
-import { UserRole, UserType } from '@src/common/utils/enums';
+import { Gender, UserRole, UserType } from '@src/common/utils/enums';
 
 export class UserResponseDto {
   @ApiProperty({ description: 'User ID' })
@@ -22,6 +22,19 @@ export class UserResponseDto {
   @ApiProperty({ description: 'Avatar URL', required: false })
   @Expose()
   avatar?: string;
+
+  @ApiProperty({ enum: Gender, description: 'Gender', required: false })
+  @Expose()
+  gender?: Gender;
+
+  @ApiProperty({
+    description: 'Date of birth',
+    type: 'string',
+    format: 'date',
+    required: false,
+  })
+  @Expose()
+  dob?: Date;
 
   @ApiProperty({ enum: UserRole, description: 'User role' })
   @Expose()

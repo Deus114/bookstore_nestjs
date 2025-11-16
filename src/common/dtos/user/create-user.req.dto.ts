@@ -1,6 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsString, IsEnum } from 'class-validator';
-import { UserRole } from '../../utils/enums';
+import { Type } from 'class-transformer';
+import {
+  IsDate,
+  IsEmail,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  ValidateIf,
+} from 'class-validator';
+import { Gender, UserRole } from '../../utils/enums';
 
 export class CreateUserDto {
   @ApiProperty()
@@ -24,4 +33,22 @@ export class CreateUserDto {
   @IsNotEmpty({ message: 'Role không được để trống' })
   @IsEnum(UserRole, { message: 'Role không hợp lệ' })
   role: UserRole;
+
+  @ApiProperty({ description: 'Giới tính', enum: Gender, required: false })
+  @IsOptional()
+  @IsEnum(Gender, { message: 'Giới tính không hợp lệ' })
+  gender?: Gender;
+
+  @ApiProperty({
+    description: 'Ngày sinh',
+    type: 'string',
+    format: 'date',
+    required: false,
+    example: '2000-01-01',
+  })
+  @IsOptional()
+  @ValidateIf((o) => o.dob !== undefined)
+  @Type(() => Date)
+  @IsDate({ message: 'Ngày sinh không hợp lệ' })
+  dob?: Date;
 }

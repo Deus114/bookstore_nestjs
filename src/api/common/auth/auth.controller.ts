@@ -66,8 +66,8 @@ export class AuthController {
     description: 'Lấy thông tin người dùng thành công',
     type: AccountResponseDto,
   })
-  handleGetAccount(@User() user: IUser): Promise<AccountResponseDto> {
-    return Promise.resolve({ user });
+  async handleGetAccount(@User() user: IUser): Promise<AccountResponseDto> {
+    return await this.authService.getAccount(user);
   }
 
   @Public()

@@ -13,4 +13,5 @@ export type Relation =
   | 'cart'
   | 'cart.items'
   | 'userAddress'
-  | 'userAddress.user';
+  | 'userAddress.user'
+  | 'addresses';

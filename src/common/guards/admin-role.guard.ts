@@ -20,21 +20,30 @@ export class AdminRoleGuard extends JwtAuthGuard {
       return true;
     }
 
+    // Chỉ kiểm tra role ADMIN cho các route trong /admin
+    const request = context.switchToHttp().getRequest();
+    const path = request.url || request.path;
+
     // Gọi canActivate của JwtAuthGuard để đảm bảo user đã được authenticate
-    const isAuthenticated = await super.canActivate(context);
+    const result = super.canActivate(context);
+    const isAuthenticated =
+      result instanceof Promise ? await result : await Promise.resolve(result);
+
     if (!isAuthenticated) {
       return false;
     }
 
+    // Nếu không phải route admin, chỉ cần authentication (không cần check role)
+    if (!path.includes('/admin/')) {
+      return true;
+    }
+
     // Lấy user từ request (đã được set bởi JwtAuthGuard)
-    const request = context.switchToHttp().getRequest();
     const user = request.user as IUser;
 
-    // Kiểm tra role
+    // Kiểm tra role ADMIN chỉ cho các route admin
     if (user.role !== UserRole.ADMIN) {
-      throw new ForbiddenException({
-        errorCode: 'FORBIDDEN',
-      });
+      throw new ForbiddenException('FORBIDDEN');
     }
 
     return true;

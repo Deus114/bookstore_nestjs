@@ -1,29 +1,32 @@
-import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { RouterModule } from '@nestjs/core';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
-import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
-import { I18nModule, I18nJsonLoader } from 'nestjs-i18n';
+import { I18nJsonLoader, I18nModule } from 'nestjs-i18n';
 import * as path from 'path';
+import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 import { AdminModule } from './api/admin/admin.module';
-import { BooksModule as AdminBooksModule } from './api/admin/books/books.module';
-import { UsersModule } from './api/admin/users/users.module';
-import { CategoriesModule as AdminCategoriesModule } from './api/admin/categories/categories.module';
 import { BannersModule as AdminBannersModule } from './api/admin/banners/banners.module';
-import { CommonModule } from './api/common/common.module';
-import { BooksModule as CommonBooksModule } from './api/common/books/books.module';
-import { CategoriesModule as CommonCategoriesModule } from './api/common/categories/categories.module';
+import { BooksModule as AdminBooksModule } from './api/admin/books/books.module';
+import { CategoriesModule as AdminCategoriesModule } from './api/admin/categories/categories.module';
+import { UsersModule } from './api/admin/users/users.module';
+import { VouchersModule as AdminVouchersModule } from './api/admin/vouchers/vouchers.module';
 import { AuthModule } from './api/common/auth/auth.module';
-import { CartsModule } from './api/common/carts/carts.module';
-import { OrdersModule } from './api/common/orders/orders.module';
-import { FilesModule } from './api/common/files/files.module';
 import { BannersModule as CommonBannersModule } from './api/common/banners/banners.module';
+import { BooksModule as CommonBooksModule } from './api/common/books/books.module';
+import { CartsModule } from './api/common/carts/carts.module';
+import { CategoriesModule as CommonCategoriesModule } from './api/common/categories/categories.module';
+import { CommonModule } from './api/common/common.module';
+import { FilesModule } from './api/common/files/files.module';
+import { OrdersModule } from './api/common/orders/orders.module';
+import { UsersModule as CommonUsersModule } from './api/common/users/users.module';
+import { VouchersModule as CommonVouchersModule } from './api/common/vouchers/vouchers.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ErrorMessageService } from './common/services/error-message.service';
 import { LoggerModule } from './common/logger';
-import { configuration } from './config/configuration';
 import { LanguageMiddleware } from './common/middleware/language.middleware';
+import { ErrorMessageService } from './common/services/error-message.service';
+import { configuration } from './config/configuration';
 
 @Module({
   imports: [
@@ -70,6 +73,10 @@ import { LanguageMiddleware } from './common/middleware/language.middleware';
             path: 'banners',
             module: AdminBannersModule,
           },
+          {
+            path: 'voucher',
+            module: AdminVouchersModule,
+          },
         ],
       },
       {
@@ -103,6 +110,14 @@ import { LanguageMiddleware } from './common/middleware/language.middleware';
           {
             path: 'banners',
             module: CommonBannersModule,
+          },
+          {
+            path: 'user',
+            module: CommonUsersModule,
+          },
+          {
+            path: 'voucher',
+            module: CommonVouchersModule,
           },
         ],
       },

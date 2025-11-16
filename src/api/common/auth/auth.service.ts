@@ -1,19 +1,20 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { UserInfoResource } from '@src/common/resources';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { UsersService } from '@src/api/admin/users/users.service';
+import {
+  AccountResponseDto,
+  LoginResponseDto,
+  LogoutResponseDto,
+  RefreshTokenResponseDto,
+  RegisterResponseDto,
+} from '@src/common/dtos/auth';
+import { RegisterUserDto } from '@src/common/dtos/user';
+import { UserInfoResource } from '@src/common/resources';
+import { IUser, UserPayload } from '@src/common/utils/interfaces';
+import { EntityId } from '@src/common/utils/types';
 import { Response } from 'express';
 import ms from 'ms';
-import { EntityId } from '@src/common/utils/types';
-import { RegisterUserDto } from '@src/common/dtos/user';
-import {
-  LoginResponseDto,
-  RegisterResponseDto,
-  RefreshTokenResponseDto,
-  LogoutResponseDto,
-} from '@src/common/dtos/auth';
-import { IUser, UserPayload } from '@src/common/utils/interfaces';
-import { UsersService } from '@src/api/admin/users/users.service';
 
 @Injectable()
 export class AuthService {
@@ -34,7 +35,14 @@ export class AuthService {
   }
 
   async login(user: IUser, response: Response): Promise<LoginResponseDto> {
-    const { id, fullName, phone, email, role, avatar } = user;
+    const { id, fullName, phone, email, role, avatar, gender } = user;
+
+    // Load user with addresses
+    const userWithAddresses = await this.usersService.userRepo.findOne(
+      id as EntityId,
+      ['addresses'],
+    );
+
     const payload: UserPayload = {
       sub: 'token login',
       iss: 'from server',
@@ -44,6 +52,7 @@ export class AuthService {
       phone,
       role,
       avatar,
+      gender,
     };
 
     const refresh_token = this.createRefreshToken(payload);
@@ -54,14 +63,7 @@ export class AuthService {
       maxAge: ms(this.configService.get<string>('jwtRefreshExpire')),
     });
 
-    const userInfo = UserInfoResource({
-      id,
-      email,
-      phone,
-      role,
-      avatar,
-      fullName,
-    } as any);
+    const userInfo = UserInfoResource(userWithAddresses || (user as any));
 
     return {
       access_token: this.jwtService.sign(payload),
@@ -94,8 +96,15 @@ export class AuthService {
       });
       const user = await this.usersService.findUserByRefreshToken(refreshToken);
       if (user) {
-        const { id, fullName, email, role, avatar, phone } = user;
-        const payload = {
+        // Load user with addresses
+        const userWithAddresses = await this.usersService.userRepo.findOne(
+          user.id as EntityId,
+          ['addresses'],
+        );
+
+        const { id, fullName, email, role, avatar, phone, gender } =
+          userWithAddresses || user;
+        const payload: UserPayload = {
           sub: 'token login',
           iss: 'from server',
           id,
@@ -104,6 +113,7 @@ export class AuthService {
           phone,
           role,
           avatar,
+          gender,
         };
         const refresh_token = this.createRefreshToken(payload);
         await this.usersService.updateRefreshToken(
@@ -151,4 +161,13 @@ export class AuthService {
     response.clearCookie('refreshToken');
     return { message: 'Đăng xuất thành công' };
   };
+
+  async getAccount(user: IUser): Promise<AccountResponseDto> {
+    // Load user with addresses
+    const userWithAddresses = await this.usersService.userRepo.findOne(
+      user.id as EntityId,
+      ['addresses'],
+    );
+    return { user: UserInfoResource(userWithAddresses || (user as any)) };
+  }
 }

@@ -1,5 +1,5 @@
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
-import { UserRole, UserType } from '../utils/enums';
+import { Gender, UserRole, UserType } from '../utils/enums';
 import { BaseEntity } from './base.entity';
 import { Cart } from './cart.entity';
 import { Order } from './order.entity';
@@ -24,6 +24,12 @@ export class User extends BaseEntity {
 
   @Column({ nullable: true })
   avatar: string;
+
+  @Column({ type: 'enum', enum: Gender, nullable: true })
+  gender: Gender;
+
+  @Column({ type: 'date', nullable: true })
+  dob: Date;
 
   @Column({ nullable: true })
   refreshToken: string;

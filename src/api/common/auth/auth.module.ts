@@ -5,12 +5,16 @@ import { PassportModule } from '@nestjs/passport';
 import ms from 'ms';
 import { JwtStrategy, LocalStrategy } from '@src/common/passport';
 import { UsersModule } from '@src/api/admin/users/users.module';
+import { UserAddressRepositoryModule } from '@src/common/repositories/user-address';
+import { UserRepositoryModule } from '@src/common/repositories/user';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 
 @Module({
   imports: [
     UsersModule,
+    UserRepositoryModule,
+    UserAddressRepositoryModule,
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

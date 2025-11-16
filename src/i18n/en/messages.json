@@ -25,9 +25,21 @@
   "INSUFFICIENT_STOCK": "Insufficient stock",
   "BOOK_NOT_AVAILABLE": "Book not available",
   "USER_ADDRESS_NOT_FOUND": "User address not found",
+  "CANNOT_DELETE_DEFAULT_ADDRESS": "Cannot delete default address when there are other addresses",
+  "MAX_ADDRESS_LIMIT_EXCEEDED": "You have reached the maximum address limit (5 addresses)",
   "ORDER_CANNOT_CANCEL": "Order cannot be cancelled",
   "INVALID_QUANTITY": "Invalid quantity",
   "INVALID_REQUEST": "Invalid request",
   "UNAUTHORIZED": "You need to login to access",
-  "FORBIDDEN": "You do not have permission to access this content"
+  "FORBIDDEN": "You do not have permission to access this content",
+  "VOUCHER_NOT_FOUND": "Voucher not found",
+  "VOUCHER_OUT_OF_STOCK": "Voucher is out of stock",
+  "VOUCHER_EXPIRED": "Voucher has expired",
+  "VOUCHER_LIMIT_REACHED": "Voucher limit reached",
+  "VOUCHER_CODE_EXISTS": "Voucher code already exists",
+  "INVALID_PASSWORD_FORMAT": "Password must be a string",
+  "PASSWORD_TOO_SHORT": "Password must be at least 6 characters",
+  "PASSWORD_MISSING_UPPERCASE": "Password must contain at least one uppercase letter",
+  "PASSWORD_MISSING_LOWERCASE": "Password must contain at least one lowercase letter",
+  "PASSWORD_MISSING_SPECIAL_CHAR": "Password must contain at least one special character"
 }

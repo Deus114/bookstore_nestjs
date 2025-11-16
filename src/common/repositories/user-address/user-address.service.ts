@@ -42,4 +42,19 @@ export class UserAddressRepositoryService {
       relations,
     });
   }
+
+  async create(userAddress: UserAddress): Promise<UserAddress> {
+    userAddress.createdAt = userAddress.generateDateNow();
+    userAddress.updatedAt = userAddress.generateDateNow();
+    return await this.repository.save(userAddress);
+  }
+
+  async update(userAddress: UserAddress): Promise<UserAddress> {
+    userAddress.updatedAt = userAddress.generateDateNow();
+    return await this.repository.save(userAddress);
+  }
+
+  async delete(id: EntityId): Promise<void> {
+    await this.repository.delete(id);
+  }
 }

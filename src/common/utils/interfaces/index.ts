@@ -1,3 +1,5 @@
+import { Gender } from '../enums';
+
 // User Interfaces
 export interface IUser {
   id: string;
@@ -6,6 +8,8 @@ export interface IUser {
   role: string;
   avatar: string;
   phone: string;
+  gender?: Gender;
+  dob?: Date;
 }
 
 export interface UserPayload {
@@ -17,6 +21,7 @@ export interface UserPayload {
   phone: string;
   role: string;
   avatar: string;
+  gender?: Gender;
 }
 
 // Response Interfaces

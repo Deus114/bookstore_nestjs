@@ -4,7 +4,6 @@ import {
   ChangePassWorDto,
   CreateUserDto,
   RegisterUserDto,
-  UpdateUserDto,
   UserBulkCreateResponseDto,
   UserResponseDto,
 } from '@src/common/dtos/user';
@@ -30,7 +29,46 @@ export class UsersService {
     return hash;
   };
 
+  validatePassword(password: string): void {
+    if (typeof password !== 'string') {
+      throw new BadRequestException({
+        errorCode: 'INVALID_PASSWORD_FORMAT',
+      });
+    }
+
+    // Tối thiểu 6 ký tự
+    if (password.length < 6) {
+      throw new BadRequestException({
+        errorCode: 'PASSWORD_TOO_SHORT',
+      });
+    }
+
+    // Ít nhất 1 chữ hoa
+    if (!/[A-Z]/.test(password)) {
+      throw new BadRequestException({
+        errorCode: 'PASSWORD_MISSING_UPPERCASE',
+      });
+    }
+
+    // Ít nhất 1 chữ thường
+    if (!/[a-z]/.test(password)) {
+      throw new BadRequestException({
+        errorCode: 'PASSWORD_MISSING_LOWERCASE',
+      });
+    }
+
+    // Ít nhất 1 ký tự đặc biệt
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+      throw new BadRequestException({
+        errorCode: 'PASSWORD_MISSING_SPECIAL_CHAR',
+      });
+    }
+  }
+
   async register(registerUserDto: RegisterUserDto): Promise<UserResponseDto> {
+    // Validate password
+    this.validatePassword(registerUserDto.password);
+
     const isEmailExist = await this.userRepositoryService.findByEmail(
       registerUserDto.email,
     );
@@ -54,6 +92,12 @@ export class UsersService {
     user.fullName = registerUserDto.fullName;
     user.phone = registerUserDto.phone;
     user.role = UserRole.USER;
+    if (registerUserDto.gender) {
+      user.gender = registerUserDto.gender;
+    }
+    if (registerUserDto.dob) {
+      user.dob = registerUserDto.dob;
+    }
 
     const result = await this.userRepositoryService.create(user);
 
@@ -84,6 +128,9 @@ export class UsersService {
     createUserDto: CreateUserDto,
     i_user: IUser,
   ): Promise<UserResponseDto> {
+    // Validate password
+    this.validatePassword(createUserDto.password);
+
     const isExist = await this.userRepositoryService.findByEmail(
       createUserDto.email,
     );
@@ -100,6 +147,12 @@ export class UsersService {
     user.role = createUserDto.role;
     user.phone = createUserDto.phone;
     user.isActive = true;
+    if (createUserDto.gender) {
+      user.gender = createUserDto.gender;
+    }
+    if (createUserDto.dob) {
+      user.dob = createUserDto.dob;
+    }
     user.type = UserType.SYSTEM;
     user.createdBy = (i_user?.id as EntityId) || null;
 
@@ -159,33 +212,6 @@ export class UsersService {
     return compareSync(password, hash);
   }
 
-  async update(
-    updateUserDto: UpdateUserDto,
-    user: IUser,
-  ): Promise<UserResponseDto> {
-    const existingUser = await this.userRepositoryService.findOne(
-      updateUserDto.id,
-    );
-    if (!existingUser) {
-      throw new BadRequestException({
-        errorCode: 'USER_NOT_FOUND',
-      });
-    }
-
-    if (updateUserDto.fullName) {
-      existingUser.fullName = updateUserDto.fullName;
-    }
-    if (updateUserDto.phone) {
-      existingUser.phone = updateUserDto.phone;
-    }
-    if (user.id) {
-      existingUser.updatedBy = user.id;
-    }
-
-    const updatedUser = await this.userRepositoryService.update(existingUser);
-    return UserResource(updatedUser);
-  }
-
   async remove(id: EntityId, user: IUser): Promise<void> {
     await this.userRepositoryService.softDelete(id, user.id);
   }
@@ -211,6 +237,10 @@ export class UsersService {
     changePasswordDto: ChangePassWorDto,
   ): Promise<UserResponseDto> => {
     const { email, oldpass, newpass } = changePasswordDto;
+
+    // Validate new password
+    this.validatePassword(newpass);
+
     const user = await this.userRepositoryService.findByEmail(email);
     if (user) {
       const isValidPassword = this.isValidPassword(oldpass, user.password);

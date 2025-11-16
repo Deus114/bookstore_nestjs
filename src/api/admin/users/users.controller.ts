@@ -16,7 +16,6 @@ import {
 import {
   ChangePassWorDto,
   CreateUserDto,
-  UpdateUserDto,
   UserBulkCreateResponseDto,
   UserResponseDto,
 } from '@src/common/dtos/user';
@@ -30,7 +29,6 @@ import { UsersService } from './users.service';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Public()
   @ResponseMessage('Tạo mới người dùng thành công')
   @ApiResponse({
     status: 201,
@@ -74,21 +72,6 @@ export class UsersController {
       paginationQuery.pageSize || 10,
       paginationQuery.search,
     );
-  }
-
-  @ResponseMessage('Cập nhật người dùng thành công')
-  @ApiResponse({
-    status: 200,
-    description: 'Cập nhật người dùng thành công',
-    type: UserResponseDto,
-  })
-  @Put()
-  async update(
-    @Body() updateUserDto: UpdateUserDto,
-    @User() user: IUser,
-  ): Promise<UserResponseDto> {
-    let updatedUser = await this.usersService.update(updateUserDto, user);
-    return updatedUser;
   }
 
   @ResponseMessage('Xóa người dùng thành công')
