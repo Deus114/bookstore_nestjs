@@ -1,8 +1,9 @@
+import { IsArray, IsNumber, IsString } from 'class-validator';
 import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
 import { BaseEntity } from './base.entity';
 import { Category } from './category.entity';
 import { OrderDetail } from './order-detail.entity';
-import { IsArray, IsNumber, IsString } from 'class-validator';
+import { Rating } from './rating.entity';
 
 @Entity('books')
 export class Book extends BaseEntity {
@@ -41,4 +42,8 @@ export class Book extends BaseEntity {
   // Quan hệ One-to-Many với OrderDetail
   @OneToMany(() => OrderDetail, (orderDetail) => orderDetail.book)
   orderDetails: OrderDetail[];
+
+  // Quan hệ One-to-Many với Rating
+  @OneToMany(() => Rating, (rating) => rating.book)
+  ratings: Rating[];
 }

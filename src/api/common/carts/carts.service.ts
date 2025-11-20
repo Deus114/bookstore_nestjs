@@ -15,7 +15,11 @@ import { buildPaginatedResponse, paginateArray } from '@src/common/helpers';
 import { BookRepositoryService } from '@src/common/repositories/book';
 import { CartRepositoryService } from '@src/common/repositories/cart';
 import { CartItemRepositoryService } from '@src/common/repositories/cart-item';
-import { CartItemsResource, CartResource } from '@src/common/resources';
+import {
+  CartItemResource,
+  CartItemsResource,
+  CartResource,
+} from '@src/common/resources';
 import { IUser } from '@src/common/utils/interfaces';
 import { EntityId } from '@src/common/utils/types';
 import { DataSource } from 'typeorm';
@@ -76,7 +80,7 @@ export class CartsService {
   async addProduct(
     user: IUser,
     addProductDto: AddProductToCartDto,
-  ): Promise<CartResponseDto> {
+  ): Promise<CartItemResponseDto> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -118,11 +122,16 @@ export class CartsService {
       }
 
       const unitPrice = Number(book.price);
+      let savedItemId: EntityId;
 
       if (existingItem) {
         // Update existing item
         existingItem.updateQuantity(newQuantity, unitPrice);
-        await queryRunner.manager.save(CartItem, existingItem);
+        const savedItem = await queryRunner.manager.save(
+          CartItem,
+          existingItem,
+        );
+        savedItemId = savedItem.id;
       } else {
         // Create new cart item
         const cartItem = new CartItem();
@@ -136,7 +145,8 @@ export class CartsService {
         cartItem.createdAt = cartItem.generateDateNow();
         cartItem.updatedAt = cartItem.generateDateNow();
 
-        await queryRunner.manager.save(CartItem, cartItem);
+        const savedItem = await queryRunner.manager.save(CartItem, cartItem);
+        savedItemId = savedItem.id;
       }
 
       // Reload cart with items and recalculate totals
@@ -152,13 +162,18 @@ export class CartsService {
 
       await queryRunner.commitTransaction();
 
-      // Reload for response
-      const finalCart = await this.cartRepositoryService.findOneByUserId(
-        user.id as EntityId,
-        ['items', 'items.book'],
+      // Reload chỉ item vừa được thêm/cập nhật với relations
+      const updatedItem = await this.cartItemRepositoryService.findOne(
+        savedItemId,
+        ['book'],
       );
 
-      return CartResource(finalCart);
+      if (!updatedItem) {
+        throw new NotFoundBusinessException('CART_ITEM_NOT_FOUND');
+      }
+
+      // Trả về chỉ item vừa được thêm/cập nhật
+      return CartItemResource(updatedItem);
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throw error;
@@ -171,7 +186,7 @@ export class CartsService {
     user: IUser,
     itemId: EntityId,
     updateQuantityDto: UpdateCartItemQuantityDto,
-  ): Promise<CartResponseDto> {
+  ): Promise<CartItemResponseDto> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -236,13 +251,17 @@ export class CartsService {
 
       await queryRunner.commitTransaction();
 
-      // Reload for response
-      const finalCart = await this.cartRepositoryService.findOneByUserId(
-        user.id as EntityId,
-        ['items', 'items.book'],
-      );
+      // Reload chỉ item vừa được cập nhật với relations
+      const updatedItem = await this.cartItemRepositoryService.findOne(itemId, [
+        'book',
+      ]);
 
-      return CartResource(finalCart);
+      if (!updatedItem) {
+        throw new NotFoundBusinessException('CART_ITEM_NOT_FOUND');
+      }
+
+      // Trả về chỉ item vừa được cập nhật
+      return CartItemResource(updatedItem);
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throw error;

@@ -4,6 +4,7 @@ export * from './book';
 export * from './cart';
 export * from './category';
 export * from './order';
+export * from './rating';
 export * from './user';
 export * from './user-address';
 export * from './voucher';

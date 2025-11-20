@@ -1,28 +1,28 @@
 import {
+  Body,
   Controller,
+  Delete,
   Get,
+  Param,
   Post,
   Put,
-  Delete,
-  Body,
-  Param,
   Query,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ResponseMessage, User } from '@src/decorator/customize';
-import { IUser } from '@src/common/utils/interfaces';
 import {
   AddProductToCartDto,
-  UpdateCartItemQuantityDto,
-  CartResponseDto,
   CartItemResponseDto,
+  CartResponseDto,
+  UpdateCartItemQuantityDto,
 } from '@src/common/dtos/cart';
 import {
   PaginatedResponseDto,
   PaginationQueryDto,
 } from '@src/common/dtos/common';
-import { CartsService } from './carts.service';
+import { IUser } from '@src/common/utils/interfaces';
 import { EntityId } from '@src/common/utils/types';
+import { ResponseMessage, User } from '@src/decorator/customize';
+import { CartsService } from './carts.service';
 
 @ApiTags('Carts')
 @Controller()
@@ -54,14 +54,14 @@ export class CartsController {
   @ApiResponse({
     status: 200,
     description: 'Thêm sản phẩm vào giỏ hàng thành công',
-    type: CartResponseDto,
+    type: CartItemResponseDto,
   })
   @ApiResponse({ status: 400, description: 'Dữ liệu không hợp lệ' })
   @ResponseMessage('Thêm sản phẩm vào giỏ hàng thành công')
   async addProduct(
     @Body() addProductDto: AddProductToCartDto,
     @User() user: IUser,
-  ): Promise<CartResponseDto> {
+  ): Promise<CartItemResponseDto> {
     return await this.cartsService.addProduct(user, addProductDto);
   }
 
@@ -70,7 +70,7 @@ export class CartsController {
   @ApiResponse({
     status: 200,
     description: 'Cập nhật số lượng thành công',
-    type: CartResponseDto,
+    type: CartItemResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Không tìm thấy cart item' })
   @ResponseMessage('Cập nhật số lượng thành công')
@@ -78,7 +78,7 @@ export class CartsController {
     @Param('id') itemId: EntityId,
     @Body() updateQuantityDto: UpdateCartItemQuantityDto,
     @User() user: IUser,
-  ): Promise<CartResponseDto> {
+  ): Promise<CartItemResponseDto> {
     return await this.cartsService.updateQuantity(
       user,
       itemId,

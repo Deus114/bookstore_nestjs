@@ -19,6 +19,7 @@ import { CategoriesModule as CommonCategoriesModule } from './api/common/categor
 import { CommonModule } from './api/common/common.module';
 import { FilesModule } from './api/common/files/files.module';
 import { OrdersModule } from './api/common/orders/orders.module';
+import { RatingsModule } from './api/common/ratings/ratings.module';
 import { UsersModule as CommonUsersModule } from './api/common/users/users.module';
 import { VouchersModule as CommonVouchersModule } from './api/common/vouchers/vouchers.module';
 import { AppController } from './app.controller';
@@ -118,6 +119,10 @@ import { configuration } from './config/configuration';
           {
             path: 'voucher',
             module: CommonVouchersModule,
+          },
+          {
+            path: 'rating',
+            module: RatingsModule,
           },
         ],
       },
