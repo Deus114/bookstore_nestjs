@@ -22,7 +22,7 @@ export class BannersController {
     description: 'Danh sách banners',
     type: PaginatedResponseDto<BannerResponseDto>,
   })
-  @ResponseMessage('Lấy danh sách banners thành công')
+  @ResponseMessage('BANNER_LIST_SUCCESS')
   async findAll(
     @Query() paginationQuery: PaginationQueryDto,
   ): Promise<PaginatedResponseDto<BannerResponseDto>> {
@@ -42,7 +42,7 @@ export class BannersController {
     type: BannerResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Không tìm thấy banner' })
-  @ResponseMessage('Lấy thông tin banner thành công')
+  @ResponseMessage('BANNER_GET_SUCCESS')
   async findOne(@Param('id') id: EntityId): Promise<BannerResponseDto> {
     return await this.bannersService.findOne(id);
   }

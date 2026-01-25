@@ -36,7 +36,7 @@ export class CartsController {
     description: 'Lấy danh sách sản phẩm trong giỏ hàng thành công',
     type: PaginatedResponseDto<CartItemResponseDto>,
   })
-  @ResponseMessage('Lấy danh sách sản phẩm trong giỏ hàng thành công')
+  @ResponseMessage('CART_LIST_SUCCESS')
   async getCart(
     @User() user: IUser,
     @Query() paginationQuery: PaginationQueryDto,
@@ -57,7 +57,7 @@ export class CartsController {
     type: CartItemResponseDto,
   })
   @ApiResponse({ status: 400, description: 'Dữ liệu không hợp lệ' })
-  @ResponseMessage('Thêm sản phẩm vào giỏ hàng thành công')
+  @ResponseMessage('CART_ADD_SUCCESS')
   async addProduct(
     @Body() addProductDto: AddProductToCartDto,
     @User() user: IUser,
@@ -73,7 +73,7 @@ export class CartsController {
     type: CartItemResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Không tìm thấy cart item' })
-  @ResponseMessage('Cập nhật số lượng thành công')
+  @ResponseMessage('CART_UPDATE_QUANTITY_SUCCESS')
   async updateQuantity(
     @Param('id') itemId: EntityId,
     @Body() updateQuantityDto: UpdateCartItemQuantityDto,
@@ -94,7 +94,7 @@ export class CartsController {
     type: CartResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Không tìm thấy cart item' })
-  @ResponseMessage('Xóa sản phẩm khỏi giỏ hàng thành công')
+  @ResponseMessage('CART_REMOVE_SUCCESS')
   async deleteItem(
     @Param('id') itemId: EntityId,
     @User() user: IUser,

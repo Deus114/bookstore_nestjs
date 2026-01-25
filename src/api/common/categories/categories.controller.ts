@@ -22,7 +22,7 @@ export class CategoriesController {
     description: 'Danh sách categories',
     type: PaginatedResponseDto<CategoryResponseDto>,
   })
-  @ResponseMessage('Lấy danh sách categories thành công')
+  @ResponseMessage('CATEGORY_LIST_SUCCESS')
   async findAll(
     @Query() paginationQuery: PaginationQueryDto,
     @Req() req: any,
@@ -45,7 +45,7 @@ export class CategoriesController {
     type: CategoryResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Không tìm thấy category' })
-  @ResponseMessage('Lấy thông tin category thành công')
+  @ResponseMessage('CATEGORY_GET_SUCCESS')
   async findOne(
     @Param('id') id: EntityId,
     @Req() req: any,

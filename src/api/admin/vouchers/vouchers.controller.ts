@@ -22,7 +22,7 @@ export class VouchersController {
     description: 'Tạo mới voucher thành công',
     type: VoucherResponseDto,
   })
-  @ResponseMessage('Tạo mới voucher thành công')
+  @ResponseMessage('VOUCHER_CREATE_SUCCESS')
   async create(
     @Body() createVoucherDto: CreateVoucherDto,
     @User() user: IUser,
@@ -37,7 +37,7 @@ export class VouchersController {
     description: 'Cập nhật voucher thành công',
     type: VoucherResponseDto,
   })
-  @ResponseMessage('Cập nhật voucher thành công')
+  @ResponseMessage('VOUCHER_UPDATE_SUCCESS')
   async update(
     @Param('id') id: EntityId,
     @Body() updateVoucherDto: UpdateVoucherDto,
@@ -53,7 +53,7 @@ export class VouchersController {
     description: 'Xóa voucher thành công',
     type: Boolean,
   })
-  @ResponseMessage('Xóa voucher thành công')
+  @ResponseMessage('VOUCHER_DELETE_SUCCESS')
   async remove(@Param('id') id: EntityId): Promise<boolean> {
     return this.vouchersService.remove(id);
   }

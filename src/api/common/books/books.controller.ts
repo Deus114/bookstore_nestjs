@@ -22,7 +22,7 @@ export class BooksController {
     description: 'Danh sách sách',
     type: PaginatedResponseDto<BookResponseDto>,
   })
-  @ResponseMessage('Lấy danh sách sách thành công')
+  @ResponseMessage('BOOK_LIST_SUCCESS')
   async findAll(
     @Query() paginationQuery: PaginationQueryDto,
   ): Promise<PaginatedResponseDto<BookResponseDto>> {
@@ -41,7 +41,7 @@ export class BooksController {
     description: 'Thông tin sách',
     type: BookResponseDto,
   })
-  @ResponseMessage('Lấy thông tin sách thành công')
+  @ResponseMessage('BOOK_GET_SUCCESS')
   async findOne(@Param('id') id: string): Promise<BookResponseDto> {
     return await this.booksService.findOne(id as EntityId);
   }

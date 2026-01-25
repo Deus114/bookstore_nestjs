@@ -30,7 +30,7 @@ export class AuthController {
 
   @Public()
   @ApiBody({ type: UserLoginDto })
-  @ResponseMessage('Đăng nhập thành công')
+  @ResponseMessage('AUTH_LOGIN_SUCCESS')
   @ApiResponse({
     status: 200,
     description: 'Đăng nhập thành công',
@@ -46,7 +46,7 @@ export class AuthController {
   }
 
   @Public()
-  @ResponseMessage('Đăng kí thành công')
+  @ResponseMessage('AUTH_REGISTER_SUCCESS')
   @ApiResponse({
     status: 201,
     description: 'Đăng kí thành công',
@@ -59,7 +59,7 @@ export class AuthController {
     return await this.authService.register(registerUserDto);
   }
 
-  @ResponseMessage('Lấy thông tin người dùng thành công')
+  @ResponseMessage('AUTH_ME_SUCCESS')
   @Get('/account')
   @ApiResponse({
     status: 200,
@@ -71,7 +71,7 @@ export class AuthController {
   }
 
   @Public()
-  @ResponseMessage('Lấy thông tin người dùng từ refresh token')
+  @ResponseMessage('AUTH_REFRESH_SUCCESS')
   @ApiResponse({
     status: 200,
     description: 'Lấy thông tin người dùng từ refresh token',
@@ -86,7 +86,7 @@ export class AuthController {
     return await this.authService.processRefreshToken(refreshToken, response);
   }
 
-  @ResponseMessage('Đăng xuất thành công')
+  @ResponseMessage('AUTH_LOGOUT_SUCCESS')
   @ApiResponse({
     status: 200,
     description: 'Đăng xuất thành công',

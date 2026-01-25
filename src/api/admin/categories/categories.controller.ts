@@ -23,7 +23,7 @@ export class CategoriesController {
     type: CategoryResponseDto,
   })
   @ApiResponse({ status: 400, description: 'Dữ liệu không hợp lệ' })
-  @ResponseMessage('Tạo category thành công')
+  @ResponseMessage('CATEGORY_CREATE_SUCCESS')
   async create(
     @Body() createCategoryDto: CreateCategoryDto,
     @User() user: IUser,
@@ -40,7 +40,7 @@ export class CategoriesController {
   })
   @ApiResponse({ status: 404, description: 'Không tìm thấy category' })
   @ApiResponse({ status: 400, description: 'Dữ liệu không hợp lệ' })
-  @ResponseMessage('Cập nhật category thành công')
+  @ResponseMessage('CATEGORY_UPDATE_SUCCESS')
   async update(
     @Param('id') id: EntityId,
     @Body() updateCategoryDto: UpdateCategoryDto,
@@ -53,7 +53,7 @@ export class CategoriesController {
   @ApiOperation({ summary: 'Xóa category' })
   @ApiResponse({ status: 200, description: 'Xóa category thành công' })
   @ApiResponse({ status: 404, description: 'Không tìm thấy category' })
-  @ResponseMessage('Xóa category thành công')
+  @ResponseMessage('CATEGORY_DELETE_SUCCESS')
   async remove(
     @Param('id') id: EntityId,
     @User() user: IUser,

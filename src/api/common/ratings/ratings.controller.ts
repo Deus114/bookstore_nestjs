@@ -39,7 +39,7 @@ export class RatingsController {
     status: 400,
     description: 'Bạn đã đánh giá sản phẩm này rồi',
   })
-  @ResponseMessage('Tạo đánh giá thành công')
+  @ResponseMessage('RATING_CREATE_SUCCESS')
   async create(
     @Body() createRatingDto: CreateRatingDto,
     @User() user: IUser,
@@ -56,7 +56,7 @@ export class RatingsController {
     description: 'Danh sách đánh giá',
     type: PaginatedResponseDto<RatingResponseDto>,
   })
-  @ResponseMessage('Lấy danh sách đánh giá thành công')
+  @ResponseMessage('RATING_LIST_SUCCESS')
   async findAll(
     @Query() ratingQuery: RatingQueryDto,
   ): Promise<PaginatedResponseDto<RatingResponseDto>> {
@@ -78,7 +78,7 @@ export class RatingsController {
     type: PaginatedResponseDto<RatingResponseDto>,
   })
   @ApiResponse({ status: 404, description: 'Không tìm thấy sách' })
-  @ResponseMessage('Lấy danh sách đánh giá thành công')
+  @ResponseMessage('RATING_LIST_SUCCESS')
   async findAllByBook(
     @Param('bookId') bookId: EntityId,
     @Query() ratingQuery: RatingQueryDto,
@@ -100,7 +100,7 @@ export class RatingsController {
     type: RatingResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Không tìm thấy đánh giá' })
-  @ResponseMessage('Lấy thông tin đánh giá thành công')
+  @ResponseMessage('RATING_GET_SUCCESS')
   async findOne(@Param('id') id: EntityId): Promise<RatingResponseDto> {
     return await this.ratingsService.findOne(id);
   }
@@ -117,7 +117,7 @@ export class RatingsController {
     status: 403,
     description: 'Không có quyền cập nhật đánh giá này',
   })
-  @ResponseMessage('Cập nhật đánh giá thành công')
+  @ResponseMessage('RATING_UPDATE_SUCCESS')
   async update(
     @Param('id') id: EntityId,
     @Body() updateRatingDto: UpdateRatingDto,
@@ -137,7 +137,7 @@ export class RatingsController {
     status: 403,
     description: 'Không có quyền xóa đánh giá này',
   })
-  @ResponseMessage('Xóa đánh giá thành công')
+  @ResponseMessage('RATING_DELETE_SUCCESS')
   async delete(@Param('id') id: EntityId, @User() user: IUser): Promise<void> {
     return await this.ratingsService.delete(id, user);
   }

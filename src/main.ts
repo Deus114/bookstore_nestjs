@@ -23,7 +23,9 @@ async function bootstrap() {
     app.get<I18nService<Record<string, unknown>>>(I18nService);
 
   app.useGlobalGuards(new JwtAuthGuard(reflector));
-  app.useGlobalInterceptors(new TransformInterceptor(reflector));
+  app.useGlobalInterceptors(
+    new TransformInterceptor(reflector, errorMessageService),
+  );
   app.useGlobalFilters(
     new GlobalExceptionFilter(
       app.getHttpAdapter(),

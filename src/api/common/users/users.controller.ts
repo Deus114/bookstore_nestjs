@@ -31,7 +31,7 @@ export class UsersController {
     description: 'Danh sách địa chỉ người dùng',
     type: [UserAddressResponseDto],
   })
-  @ResponseMessage('Lấy danh sách địa chỉ thành công')
+  @ResponseMessage('USER_ADDRESS_LIST_SUCCESS')
   async findAllAddresses(
     @User() user: IUser,
   ): Promise<UserAddressResponseDto[]> {
@@ -46,7 +46,7 @@ export class UsersController {
     type: UserAddressResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Không tìm thấy địa chỉ' })
-  @ResponseMessage('Lấy thông tin địa chỉ thành công')
+  @ResponseMessage('USER_ADDRESS_GET_SUCCESS')
   async findOneAddress(
     @Param('id') id: EntityId,
     @User() user: IUser,
@@ -66,7 +66,7 @@ export class UsersController {
     status: 400,
     description: 'Đã đạt giới hạn số địa chỉ tối đa (5 địa chỉ)',
   })
-  @ResponseMessage('Tạo địa chỉ thành công')
+  @ResponseMessage('USER_ADDRESS_CREATE_SUCCESS')
   async createAddress(
     @Body() createUserAddressDto: CreateUserAddressDto,
     @User() user: IUser,
@@ -82,7 +82,7 @@ export class UsersController {
     type: UserAddressResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Không tìm thấy địa chỉ' })
-  @ResponseMessage('Cập nhật địa chỉ thành công')
+  @ResponseMessage('USER_ADDRESS_UPDATE_SUCCESS')
   async updateAddress(
     @Param('id') id: EntityId,
     @Body() updateUserAddressDto: UpdateUserAddressDto,
@@ -106,7 +106,7 @@ export class UsersController {
     status: 400,
     description: 'Không thể xóa địa chỉ mặc định khi còn địa chỉ khác',
   })
-  @ResponseMessage('Xóa địa chỉ thành công')
+  @ResponseMessage('USER_ADDRESS_DELETE_SUCCESS')
   async deleteAddress(
     @Param('id') id: EntityId,
     @User() user: IUser,
@@ -121,7 +121,7 @@ export class UsersController {
     description: 'Cập nhật người dùng thành công',
     type: UserResponseDto,
   })
-  @ResponseMessage('Cập nhật người dùng thành công')
+  @ResponseMessage('USER_UPDATE_SUCCESS')
   async update(
     @Body() updateUserDto: UpdateUserDto,
     @User() user: IUser,

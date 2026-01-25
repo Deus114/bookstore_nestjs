@@ -45,5 +45,70 @@
   "RATING_NOT_FOUND": "Rating not found",
   "RATING_ALREADY_EXISTS": "You have already rated this product",
   "FORBIDDEN_UPDATE_RATING": "You do not have permission to update this rating",
-  "FORBIDDEN_DELETE_RATING": "You do not have permission to delete this rating"
+  "FORBIDDEN_DELETE_RATING": "You do not have permission to delete this rating",
+
+  "BANNER_CREATE_SUCCESS": "Banner created successfully",
+  "BANNER_UPDATE_SUCCESS": "Banner updated successfully",
+  "BANNER_DELETE_SUCCESS": "Banner deleted successfully",
+  "BANNER_LIST_SUCCESS": "Banner list retrieved successfully",
+  "BANNER_GET_SUCCESS": "Banner details retrieved successfully",
+
+  "CART_LIST_SUCCESS": "Cart items retrieved successfully",
+  "CART_ADD_SUCCESS": "Item added to cart successfully",
+  "CART_UPDATE_QUANTITY_SUCCESS": "Quantity updated successfully",
+  "CART_REMOVE_SUCCESS": "Item removed from cart successfully",
+
+  "RATING_CREATE_SUCCESS": "Rating created successfully",
+  "RATING_LIST_SUCCESS": "Rating list retrieved successfully",
+  "RATING_GET_SUCCESS": "Rating details retrieved successfully",
+  "RATING_UPDATE_SUCCESS": "Rating updated successfully",
+  "RATING_DELETE_SUCCESS": "Rating deleted successfully",
+
+  "AUTH_LOGIN_SUCCESS": "Login successful",
+  "AUTH_REGISTER_SUCCESS": "Register successful",
+  "AUTH_ME_SUCCESS": "User info retrieved successfully",
+  "AUTH_REFRESH_SUCCESS": "User info from refresh token retrieved successfully",
+  "AUTH_LOGOUT_SUCCESS": "Logout successful",
+
+  "USER_ADDRESS_LIST_SUCCESS": "Address list retrieved successfully",
+  "USER_ADDRESS_GET_SUCCESS": "Address details retrieved successfully",
+  "USER_ADDRESS_CREATE_SUCCESS": "Address created successfully",
+  "USER_ADDRESS_UPDATE_SUCCESS": "Address updated successfully",
+  "USER_ADDRESS_DELETE_SUCCESS": "Address deleted successfully",
+  "USER_UPDATE_SUCCESS": "User updated successfully",
+
+  "VOUCHER_CREATE_SUCCESS": "Voucher created successfully",
+  "VOUCHER_UPDATE_SUCCESS": "Voucher updated successfully",
+  "VOUCHER_DELETE_SUCCESS": "Voucher deleted successfully",
+  "VOUCHER_LIST_SUCCESS": "Voucher list retrieved successfully",
+  "VOUCHER_CLAIM_SUCCESS": "Voucher claimed successfully",
+  "VOUCHER_MY_LIST_SUCCESS": "User vouchers retrieved successfully",
+
+  "BOOK_CREATE_SUCCESS": "Book created successfully",
+  "BOOK_UPDATE_SUCCESS": "Book updated successfully",
+  "BOOK_DELETE_SUCCESS": "Book deleted successfully",
+  "BOOK_DASHBOARD_SUCCESS": "Dashboard retrieved successfully",
+  "BOOK_LIST_SUCCESS": "Book list retrieved successfully",
+  "BOOK_GET_SUCCESS": "Book details retrieved successfully",
+
+  "USER_CREATE_SUCCESS": "User created successfully",
+  "USER_CREATE_BULK_SUCCESS": "Users created successfully",
+  "USER_LIST_SUCCESS": "Data retrieved successfully",
+  "USER_DELETE_SUCCESS": "User deleted successfully",
+  "USER_UPDATE_PASSWORD_SUCCESS": "Password updated successfully",
+
+  "ORDER_PREVIEW_SUCCESS": "Order preview retrieved successfully",
+  "ORDER_CREATE_SUCCESS": "Order created successfully",
+  "ORDER_LIST_SUCCESS": "Order list retrieved successfully",
+  "ORDER_HISTORY_SUCCESS": "Order history retrieved successfully",
+
+  "CATEGORY_LIST_SUCCESS": "Category list retrieved successfully",
+  "CATEGORY_GET_SUCCESS": "Category details retrieved successfully",
+  "CATEGORY_CREATE_SUCCESS": "Category created successfully",
+  "CATEGORY_UPDATE_SUCCESS": "Category updated successfully",
+  "CATEGORY_DELETE_SUCCESS": "Category deleted successfully",
+
+  "FILE_UPLOAD_SINGLE_SUCCESS": "File uploaded successfully",
+  "FILE_UPLOAD_IMAGE_SUCCESS": "Image uploaded successfully",
+  "FILE_UPLOAD_IMAGES_SUCCESS": "Images uploaded successfully"
 }

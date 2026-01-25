@@ -22,7 +22,6 @@ import { OrdersModule } from './api/common/orders/orders.module';
 import { RatingsModule } from './api/common/ratings/ratings.module';
 import { UsersModule as CommonUsersModule } from './api/common/users/users.module';
 import { VouchersModule as CommonVouchersModule } from './api/common/vouchers/vouchers.module';
-import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { LoggerModule } from './common/logger';
 import { LanguageMiddleware } from './common/middleware/language.middleware';
@@ -85,16 +84,16 @@ import { configuration } from './config/configuration';
         module: CommonModule,
         children: [
           {
+            path: 'auth',
+            module: AuthModule,
+          },
+          {
             path: 'book',
             module: CommonBooksModule,
           },
           {
             path: 'categories',
             module: CommonCategoriesModule,
-          },
-          {
-            path: 'auth',
-            module: AuthModule,
           },
           {
             path: 'cart',
@@ -128,7 +127,6 @@ import { configuration } from './config/configuration';
       },
     ]),
   ],
-  controllers: [AppController],
   providers: [
     AppService,
     ErrorMessageService,

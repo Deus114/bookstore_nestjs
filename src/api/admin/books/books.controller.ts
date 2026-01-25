@@ -34,7 +34,7 @@ export class BooksController {
     type: BookResponseDto,
   })
   @ApiResponse({ status: 400, description: 'Dữ liệu không hợp lệ' })
-  @ResponseMessage('Tạo mới sách thành công')
+  @ResponseMessage('BOOK_CREATE_SUCCESS')
   @Post()
   async create(
     @Body() createBookDto: CreateBookDto,
@@ -51,7 +51,7 @@ export class BooksController {
     type: BookResponseDto,
   })
   @ApiResponse({ status: 400, description: 'Dữ liệu không hợp lệ' })
-  @ResponseMessage('Cập nhật sách thành công')
+  @ResponseMessage('BOOK_UPDATE_SUCCESS')
   async update(
     @Param('id') id: string,
     @Body() updateBookDto: UpdateBookDto,
@@ -68,7 +68,7 @@ export class BooksController {
     type: Boolean,
   })
   @ApiResponse({ status: 404, description: 'Sách không tồn tại' })
-  @ResponseMessage('Xóa sách thành công')
+  @ResponseMessage('BOOK_DELETE_SUCCESS')
   async remove(@Param('id') id: string): Promise<boolean> {
     return await this.booksService.remove(id as EntityId);
   }
@@ -89,7 +89,7 @@ export class DatabaseController {
     description: 'Dashboard',
     type: DashboardResponseDto,
   })
-  @ResponseMessage('Lấy dashboard thành công')
+  @ResponseMessage('BOOK_DASHBOARD_SUCCESS')
   @Get('/dashboard')
   async getDashboard(): Promise<DashboardResponseDto> {
     const countUser = await this.usersService.getUserDashboard();

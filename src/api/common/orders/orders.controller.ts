@@ -25,7 +25,7 @@ export class OrdersController {
     description: 'Lấy thông tin preview đơn hàng thành công',
   })
   @ApiResponse({ status: 400, description: 'Dữ liệu không hợp lệ' })
-  @ResponseMessage('Lấy thông tin preview đơn hàng thành công')
+  @ResponseMessage('ORDER_PREVIEW_SUCCESS')
   async preview(
     @Query() createOrderDto: CreateOrderDto,
     @User() user: IUser,
@@ -41,7 +41,7 @@ export class OrdersController {
     type: OrderResponseDto,
   })
   @ApiResponse({ status: 400, description: 'Dữ liệu không hợp lệ' })
-  @ResponseMessage('Tạo đơn hàng thành công')
+  @ResponseMessage('ORDER_CREATE_SUCCESS')
   async create(
     @Body() createOrderDto: CreateOrderDto,
     @User() user: IUser,
@@ -57,7 +57,7 @@ export class OrdersController {
     type: PaginatedResponseDto<OrderResponseDto>,
   })
   @ApiResponse({ status: 400, description: 'Dữ liệu không hợp lệ' })
-  @ResponseMessage('Lấy danh sách đơn hàng thành công')
+  @ResponseMessage('ORDER_LIST_SUCCESS')
   async findAll(
     @Query() paginationQuery: PaginationQueryDto,
   ): Promise<PaginatedResponseDto<OrderResponseDto>> {
@@ -82,7 +82,7 @@ export class OrderHistory {
     type: OrderResponseDto,
   })
   @ApiResponse({ status: 400, description: 'Dữ liệu không hợp lệ' })
-  @ResponseMessage('Lấy lịch sử đơn hàng thành công')
+  @ResponseMessage('ORDER_HISTORY_SUCCESS')
   async getOrderHistory(@User() user: IUser): Promise<OrderResponseDto[]> {
     return await this.ordersService.getHistory(user);
   }

@@ -22,7 +22,7 @@ export class BannersController {
     description: 'Tạo banner thành công',
     type: BannerResponseDto,
   })
-  @ResponseMessage('Tạo banner thành công')
+  @ResponseMessage('BANNER_CREATE_SUCCESS')
   async create(
     @Body() createBannerDto: CreateBannerDto,
     @User() user: IUser,
@@ -38,7 +38,7 @@ export class BannersController {
     type: BannerResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Không tìm thấy banner' })
-  @ResponseMessage('Cập nhật banner thành công')
+  @ResponseMessage('BANNER_UPDATE_SUCCESS')
   async update(
     @Param('id') id: EntityId,
     @Body() updateBannerDto: UpdateBannerDto,
@@ -54,7 +54,7 @@ export class BannersController {
     description: 'Xóa banner thành công',
   })
   @ApiResponse({ status: 404, description: 'Không tìm thấy banner' })
-  @ResponseMessage('Xóa banner thành công')
+  @ResponseMessage('BANNER_DELETE_SUCCESS')
   async remove(
     @Param('id') id: EntityId,
     @User() user: IUser,

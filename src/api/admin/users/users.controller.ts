@@ -29,7 +29,7 @@ import { UsersService } from './users.service';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @ResponseMessage('Tạo mới người dùng thành công')
+  @ResponseMessage('USER_CREATE_SUCCESS')
   @ApiResponse({
     status: 201,
     description: 'Tạo mới người dùng thành công',
@@ -43,7 +43,7 @@ export class UsersController {
     return await this.usersService.create(createUserDto, user);
   }
 
-  @ResponseMessage('Tạo mới nhiều người dùng thành công')
+  @ResponseMessage('USER_CREATE_BULK_SUCCESS')
   @ApiResponse({
     status: 201,
     description: 'Tạo mới nhiều người dùng thành công',
@@ -58,7 +58,7 @@ export class UsersController {
   }
 
   @Get()
-  @ResponseMessage('Lấy dữ liệu thành công')
+  @ResponseMessage('USER_LIST_SUCCESS')
   @ApiResponse({
     status: 200,
     description: 'Lấy dữ liệu thành công',
@@ -74,7 +74,7 @@ export class UsersController {
     );
   }
 
-  @ResponseMessage('Xóa người dùng thành công')
+  @ResponseMessage('USER_DELETE_SUCCESS')
   @ApiResponse({
     status: 200,
     description: 'Xóa người dùng thành công',
@@ -85,7 +85,7 @@ export class UsersController {
     return await this.usersService.remove(id, user);
   }
 
-  @ResponseMessage('Cập nhật mật khẩu thành công')
+  @ResponseMessage('USER_UPDATE_PASSWORD_SUCCESS')
   @ApiResponse({
     status: 200,
     description: 'Cập nhật mật khẩu thành công',

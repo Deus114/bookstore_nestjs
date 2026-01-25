@@ -27,7 +27,7 @@ export class FilesController {
 
   @Public()
   @Post('/upload')
-  @ResponseMessage('Upload Single File')
+  @ResponseMessage('FILE_UPLOAD_SINGLE_SUCCESS')
   @UseInterceptors(FileInterceptor('fileUpload'))
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Upload một file' })
@@ -63,7 +63,7 @@ export class FilesController {
    */
   @Public()
   @Post('/upload-single-image')
-  @ResponseMessage('Upload Single Image')
+  @ResponseMessage('FILE_UPLOAD_IMAGE_SUCCESS')
   @UseInterceptors(FileInterceptor('image'))
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Upload một ảnh' })
@@ -107,7 +107,7 @@ export class FilesController {
    */
   @Public()
   @Post('/upload-multiple-images')
-  @ResponseMessage('Upload Multiple Images')
+  @ResponseMessage('FILE_UPLOAD_IMAGES_SUCCESS')
   @UseInterceptors(FilesInterceptor('images', 10))
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Upload nhiều ảnh (tối đa 10 ảnh)' })

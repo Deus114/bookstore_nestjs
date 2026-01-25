@@ -23,7 +23,7 @@ export class VouchersController {
     description: 'Danh sách voucher',
     type: PaginatedResponseDto<VoucherResponseDto>,
   })
-  @ResponseMessage('Lấy danh sách voucher thành công')
+  @ResponseMessage('VOUCHER_LIST_SUCCESS')
   async findAll(
     @Query() query: VoucherQueryDto,
   ): Promise<PaginatedResponseDto<VoucherResponseDto>> {
@@ -43,7 +43,7 @@ export class VouchersController {
     description: 'Nhận voucher thành công',
     type: UserVoucherResponseDto,
   })
-  @ResponseMessage('Nhận voucher thành công')
+  @ResponseMessage('VOUCHER_CLAIM_SUCCESS')
   async claim(
     @Body() claimVoucherDto: ClaimVoucherDto,
     @User() user: IUser,
@@ -58,7 +58,7 @@ export class VouchersController {
     description: 'Danh sách voucher của người dùng',
     type: [UserVoucherResponseDto],
   })
-  @ResponseMessage('Lấy voucher của người dùng thành công')
+  @ResponseMessage('VOUCHER_MY_LIST_SUCCESS')
   async getMyVouchers(@User() user: IUser): Promise<UserVoucherResponseDto[]> {
     return this.vouchersService.getUserVouchers(user);
   }
